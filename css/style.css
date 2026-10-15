@@ -1,0 +1,16 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #120a10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+canvas {
+  display: block;
+  image-rendering: pixelated;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+}
