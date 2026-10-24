@@ -1,8 +1,7 @@
 'use strict';
 
-// Batalla en coche contra el monstruo: reglas comunes a todos los estilos (movimiento lateral, balas,
-// recarga, vida, explosión final e interfaz). Cada estilo visual es una «vista» que se registra en
-// Battle.views (chasetop.js, chase3d.js) y pone la geometría y el dibujo del mundo.
+// Batalla en coche contra el monstruo: reglas (movimiento lateral, balas, recarga, vida, explosión final)
+// e interfaz. La vista cenital (chasetop.js) se registra en Battle.views y pone la geometría y el dibujo del mundo.
 // Los ajustes (vida, cargador, recarga) están en CHASE, en data.js.
 const Battle = (() => {
   const { P, ell } = Art.util;
@@ -31,8 +30,8 @@ const Battle = (() => {
    *  monsterTarget(st, sway)      x a la que va el monstruo; sway oscila entre -1 y 1
    *  draw(st, g)                  dibuja el mundo
    */
-  function create(onWin, style) {
-    const view = views[style] || Object.values(views)[0];
+  function create(onWin) {
+    const view = views.top;
     const st = {
       view, onWin, t: 0,
       car: { x: view.carStartX, vx: 0, recoil: 0, flash: 0 },

@@ -86,7 +86,54 @@ const Art = (() => {
   }
 
   // ---------- suelo ----------
-  const groundOf = ch => (ch === '=' ? 'path' : ch === '~' ? 'water' : 'grass');
+  const GROUND = { '=': 'path', '~': 'water', ':': 'tiles', 'o': 'deck', 'P': 'pool', 'a': 'road', '-': 'walk', 'z': 'sand' };
+
+  // Asfalto; si debajo sigue la carretera, la línea discontinua del centro va en el borde de abajo.
+  function roadTile(g, x0, y0, r, nb) {
+    P(g, '#55585e', x0, y0, T, T);
+    for (let i = 0; i < 14; i++) P(g, r() < 0.5 ? '#4a4d52' : '#62656b', x0 + ((r() * T) | 0), y0 + ((r() * T) | 0));
+    if (nb.d) P(g, '#f4f1ea', x0 + 2, y0 + T - 1, 9, 1);
+    if (!nb.u) P(g, '#3e4146', x0, y0, T, 1);
+  }
+
+  function sandTile(g, x0, y0, r) {
+    P(g, '#e9d49c', x0, y0, T, T);
+    for (let i = 0; i < 12; i++) P(g, r() < 0.5 ? '#d8bf82' : '#f5e3b4', x0 + ((r() * T) | 0), y0 + ((r() * T) | 0));
+  }
+  const groundOf = ch => GROUND[ch] || 'grass';
+
+  // Baldosas cuadradas de 8px (patio de barro cocido o suelo claro de la piscina).
+  function pavedTile(g, x0, y0, tx, ty, base, grout, light) {
+    P(g, grout, x0, y0, T, T);
+    for (let sy = 0; sy < 2; sy++) {
+      for (let sx = 0; sx < 2; sx++) {
+        const r = rng(hash(tx * 2 + sx, ty * 2 + sy));
+        const col = r() < 0.3 ? shade(base, -0.06) : r() < 0.2 ? shade(base, 0.06) : base;
+        const px = x0 + sx * 8, py = y0 + sy * 8;
+        P(g, col, px, py, 7, 7);
+        P(g, light, px, py, 7, 1);
+        if (r() < 0.4) P(g, shade(col, -0.12), px + 1 + ((r() * 5) | 0), py + 2 + ((r() * 4) | 0));
+      }
+    }
+  }
+
+  function poolTile(g, x0, y0, tx, ty, nb, frame) {
+    P(g, '#4cc0e6', x0, y0, T, T);
+    P(g, '#43b2da', x0 + 7, y0, 1, T);
+    P(g, '#43b2da', x0, y0 + 7, T, 1);
+    // reflejos que se mueven con el fotograma
+    const r = rng(hash(tx, ty));
+    for (let i = 0; i < 3; i++) {
+      const wy = 2 + ((r() * 12) | 0), wx = ((r() * T) | 0);
+      const sx = (wx + frame * 3 + i * 5) % T, len = 3 + ((r() * 3) | 0);
+      for (let k = 0; k < len; k++) P(g, '#a8ecfb', x0 + ((sx + k) % T), y0 + wy + (k === 1 ? -1 : 0));
+    }
+    // bordillo blanco y sombra del borde dentro del agua
+    if (!nb.u) { P(g, '#2f97c2', x0, y0 + 3, T, 2); P(g, '#f4f1ea', x0, y0, T, 3); P(g, '#cfc8b8', x0, y0 + 3, T, 1); }
+    if (!nb.d) { P(g, '#f4f1ea', x0, y0 + T - 2, T, 2); }
+    if (!nb.l) { P(g, '#2f97c2', x0 + 3, y0, 1, T); P(g, '#f4f1ea', x0, y0, 3, T); }
+    if (!nb.r) { P(g, '#f4f1ea', x0 + T - 3, y0, 3, T); }
+  }
 
   function grassTile(g, x0, y0, r, flowers) {
     P(g, C.grass, x0, y0, T, T);
@@ -187,7 +234,8 @@ const Art = (() => {
     if (!nb.d && !nb.r) { P(g, C.grass, x0 + T - 5, y0 + T - 4, 5, 4); P(g, C.grass, x0 + T - 3, y0 + T - 5, 3, 5); }
   }
 
-  function ground(tiles, frame) {
+  // flats: muebles planos (p. ej. un flotador) que se pintan sobre el suelo.
+  function ground(tiles, frame, flats = []) {
     const h = tiles.length, w = tiles[0].length;
     const { c, g } = mk(w * T, h * T);
     const typeAt = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? null : groundOf(tiles[y][x]));
@@ -204,9 +252,19 @@ const Art = (() => {
         const r = rng(seed);
         if (type === 'path') pathTile(g, x * T, y * T, r, nb);
         else if (type === 'water') waterTile(g, x * T, y * T, seed, nb, frame);
+        else if (type === 'tiles') pavedTile(g, x * T, y * T, x, y, '#c9714a', '#8f4a30', '#dd8a62');
+        else if (type === 'deck') pavedTile(g, x * T, y * T, x, y, '#ebe3cf', '#c9bea4', '#f7f1e2');
+        else if (type === 'pool') poolTile(g, x * T, y * T, x, y, nb, frame);
+        else if (type === 'road') roadTile(g, x * T, y * T, r, nb);
+        else if (type === 'sand') sandTile(g, x * T, y * T, r);
+        else if (type === 'walk') {
+          pavedTile(g, x * T, y * T, x, y, '#cfccc5', '#a9a6a0', '#e2dfd8');
+          if (typeAt(x, y - 1) === 'road') { P(g, '#8d8a86', x * T, y * T, T, 2); P(g, '#e8e5de', x * T, y * T + 2, T, 1); }
+        }
         else grassTile(g, x * T, y * T, r, ch === ',');
       }
     }
+    flats.filter(f => f.flat).forEach(f => g.drawImage(f.img, f.x * T, f.y * T));
     return c;
   }
 
@@ -298,6 +356,293 @@ const Art = (() => {
     P(g, C.woodL, 6, 3, 4, 1);
     P(g, C.woodD, 9, 4, 1, 10);
     return c;
+  }
+
+  // Palmera: tronco con anillos algo inclinado y penacho de hojas.
+  function makePalm(seed) {
+    const r = rng(seed);
+    const { c, g } = mk(32, 48);
+    ell(g, C.shadow, 16, 45, 9, 2.5);
+    const lean = r() < 0.5 ? -1 : 1;
+    const tx = y => Math.round(16 + lean * Math.pow((46 - y) / 34, 2) * 3);
+    for (let y = 14; y < 46; y++) {
+      P(g, O, tx(y) - 3, y, 6, 1);
+      P(g, (y % 4 === 0) ? '#7d5a36' : '#a07a4c', tx(y) - 2, y, 4, 1);
+      P(g, '#c49a64', tx(y) - 1, y, 1, 1);
+    }
+    const cx = tx(14), cy = 13;
+    // hojas: arcos que salen del centro y caen
+    [[-1, -0.35], [1, -0.35], [-1, 0.35], [1, 0.35], [-0.3, -1], [0.35, -0.9], [0, 0.6]].forEach(([dx, dy]) => {
+      for (let i = 0; i <= 13; i++) {
+        const k = i / 13;
+        const x = Math.round(cx + dx * i * 1.05), y = Math.round(cy + dy * i * 0.8 + k * k * 6);
+        P(g, O, x - 1, y - 1, 3, 3);
+      }
+    });
+    [[-1, -0.35], [1, -0.35], [-1, 0.35], [1, 0.35], [-0.3, -1], [0.35, -0.9], [0, 0.6]].forEach(([dx, dy], j) => {
+      for (let i = 0; i <= 13; i++) {
+        const k = i / 13;
+        const x = Math.round(cx + dx * i * 1.05), y = Math.round(cy + dy * i * 0.8 + k * k * 6);
+        P(g, j % 2 ? C.leafD : C.leaf, x - (i < 11 ? 1 : 0), y, i < 11 ? 2 : 1, 1);
+        if (i % 3 === 1) P(g, C.leafL, x, y - 1);
+      }
+    });
+    oell(g, '#6b4f2a', cx, cy + 1, 2.5, 2);
+    P(g, '#8a6a3c', cx - 1, cy, 2, 1);
+    return c;
+  }
+
+  // Muro blanco de patio, más alto que una valla. Se une con los muros de alrededor:
+  // los tramos horizontales enseñan la cara de delante; los verticales, solo la parte de arriba.
+  function makeWall(l, r, u, d) {
+    const { c, g } = mk(T, 28);
+    const top = 6, bottom = 12, face = 12; // albardilla en y 6..12 (centro de la casilla), cara de 12px debajo
+    const cap = '#ffffff', faceCol = '#ece7dc', faceD = '#d6cfc0';
+    const x0 = l ? 0 : 5, x1 = r ? T : 11;
+    const y0 = u ? 0 : top, y1 = d ? 28 : bottom;
+    ell(g, C.shadow, 8, 26.5, d ? 3 : 7, 1.5);
+    // contorno
+    P(g, O, x0 - (l ? 0 : 1), top - 1, x1 - x0 + (l ? 0 : 1) + (r ? 0 : 1), bottom - top + face + 2);
+    P(g, O, 4, y0 - (u ? 0 : 1), 8, y1 - y0 + (u ? 0 : 1) + (d ? 0 : face + 1));
+    // cara de delante (donde el muro no sigue hacia abajo)
+    P(g, faceCol, x0, bottom, x1 - x0, face);
+    if (!d) P(g, faceCol, 5, bottom, 6, face);
+    P(g, faceD, x0, bottom, x1 - x0, 1);
+    P(g, faceD, x0, bottom + face - 2, x1 - x0, 2);
+    // albardilla
+    P(g, cap, x0, top, x1 - x0, bottom - top);
+    P(g, cap, 5, y0, 6, y1 - y0);
+    if (d) P(g, faceD, 10, bottom, 1, 28 - bottom);
+    P(g, '#f7f4ee', x0, bottom - 1, x1 - x0, 1);
+    return c;
+  }
+
+  // Seto recortado; se une con los setos de los lados.
+  function makeHedge(l, r) {
+    const { c, g } = mk(T, 24);
+    const x0 = l ? 0 : 1, x1 = r ? T : T - 1;
+    P(g, O, x0, 5, x1 - x0, 19);
+    if (!l) P(g, O, 0, 7, 1, 15);
+    if (!r) P(g, O, T - 1, 7, 1, 15);
+    P(g, C.leafD, x0 + (l ? 0 : 1), 6, x1 - x0 - (l ? 0 : 1) - (r ? 0 : 1), 17);
+    P(g, C.leaf, x0 + (l ? 0 : 1), 6, x1 - x0 - (l ? 0 : 1) - (r ? 0 : 1), 5);
+    P(g, C.leafL, x0 + (l ? 0 : 1), 6, x1 - x0 - (l ? 0 : 1) - (r ? 0 : 1), 1);
+    [[3, 13], [10, 16], [6, 19], [12, 9], [2, 8]].forEach(([x, y]) => P(g, C.leafDD, x, y, 2, 1));
+    [[5, 8], [11, 7], [8, 14]].forEach(([x, y]) => P(g, C.leafL, x, y));
+    return c;
+  }
+
+  // Globo atado a una estaca; sway mueve el globo para animarlo.
+  function makeBalloon(col, sway) {
+    const { c, g } = mk(T, 34);
+    ell(g, C.shadow, 8, 32, 3, 1);
+    orect(g, C.trunk, 7, 27, 2, 5);
+    const bx = 8 + sway;
+    for (let y = 15; y < 28; y++) P(g, '#f4f1ea', Math.round(8 + (bx - 8) * (1 - (y - 15) / 13)), y);
+    oell(g, col, bx, 8, 5, 6.5);
+    ell(g, shade(col, -0.25), bx + 1.5, 10, 3, 4);
+    ell(g, col, bx - 0.5, 7, 3.5, 4.5);
+    P(g, shade(col, 0.6), bx - 3, 4, 2, 2);
+    P(g, O, bx - 1, 15, 3, 1);
+    P(g, col, bx, 15, 1, 1);
+    return c;
+  }
+
+  function makeNote() {
+    const { c, g } = mk(T, T);
+    ell(g, C.shadow, 8, 15, 3, 1);
+    orect(g, C.trunk, 7, 10, 2, 5);
+    orect(g, '#fffaf0', 3, 2, 10, 9);
+    P(g, '#b8b0a0', 5, 4, 6, 1);
+    P(g, '#b8b0a0', 5, 6, 5, 1);
+    P(g, '#e04a5a', 9, 8, 1, 1); P(g, '#e04a5a', 11, 8, 1, 1); P(g, '#e04a5a', 9, 9, 3, 1); P(g, '#e04a5a', 10, 10);
+    P(g, '#d94c3a', 7, 1, 2, 2);
+    return c;
+  }
+
+  // Flecha de tiza en el suelo, apuntando a dir.
+  const arrowCache = {};
+  function arrow(dir) {
+    if (arrowCache[dir]) return arrowCache[dir];
+    const { c, g } = mk(T, T);
+    const rot = { right: 0, down: 1, left: 2, up: 3 }[dir];
+    g.translate(8, 8);
+    g.rotate(rot * Math.PI / 2);
+    g.translate(-8, -8);
+    const col = 'rgba(255,251,232,0.85)';
+    P(g, col, 2, 7, 8, 2);
+    for (let i = 0; i < 5; i++) P(g, col, 9 + i, 3 + i, 1, 10 - 2 * i);
+    P(g, 'rgba(255,251,232,0.35)', 3, 9, 6, 1);
+    arrowCache[dir] = c;
+    return c;
+  }
+
+  // Adosado mediterráneo como los de la urbanización: blanco, de dos plantas (floors: 1 | 2),
+  // azotea con pérgola de madera oscura, viga marrón entre plantas y escalera exterior de barro cocido.
+  function makeMedHouse(hs) {
+    const floors = hs.floors || 2;
+    const W = hs.w * T, H = hs.h * T + 8;
+    const { c, g } = mk(W, H);
+    const white = '#f8f6f1', whiteD = '#e6e1d6', whiteDD = '#cfc8ba', wood = '#5a3a28', woodD = '#3a2418';
+    const ground = 32, upper = floors === 2 ? 24 : 0, roof = H - ground - upper;
+    const yUp = roof, yGround = roof + upper;
+
+    const win = (x, y, w, h) => {
+      P(g, O, x - 1, y - 1, w + 2, h + 2);
+      P(g, white, x, y, w, h);
+      P(g, '#3d4a5a', x + 1, y + 1, w - 2, h - 2);
+      P(g, '#6f8aa6', x + 1, y + 1, 2, h - 2);
+      P(g, '#9fb6cc', x + 2, y + 1, 1, 2);
+      P(g, white, x + (w >> 1), y + 1, 1, h - 2);
+      P(g, wood, x - 1, y - 3, w + 2, 2); // dintel
+    };
+
+    // ---- azotea (vista desde arriba) ----
+    P(g, O, 0, 0, W, roof + 1);
+    P(g, '#ebe5d7', 1, 1, W - 2, roof - 1);
+    for (let x = 4; x < W - 2; x += 8) P(g, '#ddd5c4', x, 3, 1, roof - 5);
+    P(g, white, 1, 1, W - 2, 2);            // pretil de atrás
+    P(g, white, 1, 1, 2, roof - 1);         // pretiles de los lados
+    P(g, white, W - 3, 1, 2, roof - 1);
+    // caseta de la escalera con su remate escalonado
+    P(g, O, 5, 2, 15, roof - 4);
+    P(g, white, 6, 3, 13, roof - 6);
+    P(g, whiteD, 6, roof - 6, 13, 3);
+    P(g, white, 8, 1, 9, 2);
+    // pérgola de vigas sobre la mitad derecha
+    const px0 = Math.round(W * 0.48), px1 = W - 5;
+    for (let x = px0; x <= px1; x += 4) P(g, wood, x, 3, 2, roof - 6);
+    P(g, woodD, px0, 3, px1 - px0 + 2, 2);
+    P(g, woodD, px0, roof - 5, px1 - px0 + 2, 2);
+    // pretil de delante
+    P(g, white, 1, roof - 3, W - 2, 3);
+    P(g, whiteD, 1, roof - 1, W - 2, 1);
+
+    // ---- planta de arriba ----
+    if (upper) {
+      P(g, O, 0, yUp, W, upper);
+      P(g, white, 1, yUp, W - 2, upper);
+      P(g, whiteD, W - 10, yUp, 9, upper);   // sombra lateral
+      P(g, wood, 1, yUp + 1, W - 2, 1);       // barandilla de la azotea
+      win(Math.round(W * 0.18), yUp + 8, 12, 12);
+      win(Math.round(W * 0.6), yUp + 8, 16, 12);
+    }
+
+    // ---- planta baja, bajo el porche ----
+    P(g, O, 0, yGround, W, ground);
+    P(g, white, 1, yGround, W - 2, ground - 1);
+    P(g, whiteD, 1, yGround + 3, W - 2, 5);   // sombra del porche
+    P(g, wood, 0, yGround, W, 3);             // viga marrón entre plantas
+    P(g, woodD, 0, yGround + 3, W, 1);
+    // pilares blancos del porche
+    [[1, 5], [W - 6, 5]].forEach(([x, w]) => {
+      P(g, O, x - 1, yGround + 4, w + 2, ground - 4);
+      P(g, white, x, yGround + 4, w, ground - 5);
+      P(g, whiteDD, x + w - 1, yGround + 4, 1, ground - 5);
+    });
+    const doorCol = Math.floor(hs.w / 2);
+    const dx = doorCol * T + 3, dw = 10, dy = yGround + 11, dh = H - 3 - dy;
+    // escalera exterior: peldaños de barro cocido subiendo hacia la izquierda, con su murete blanco
+    if (upper) {
+      const steps = [];
+      for (let i = 0; i < 12; i++) {
+        const sx = 7 + i * 2, sy = H - 6 - i * 2;
+        if (sx + 6 > dx - 3) break;
+        steps.push([sx, sy]);
+      }
+      // macizo blanco bajo los peldaños, con su contorno en diagonal
+      steps.forEach(([sx, sy]) => {
+        P(g, O, sx - 1, sy - 4, 7, 1);
+        P(g, whiteD, sx, sy + 2, 6, H - 3 - sy - 2);
+        P(g, white, sx + 4, sy - 3, 2, 3);
+      });
+      steps.forEach(([sx, sy]) => {
+        P(g, '#d9733f', sx, sy, 5, 2);
+        P(g, '#b85a2e', sx, sy + 1, 5, 1);
+      });
+      P(g, whiteDD, 6, H - 4, steps.length * 2 + 6, 1);
+    }
+    // ventana de la planta baja
+    win(dx + dw + 7, yGround + 13, 12, 10);
+    // puerta de madera oscura con el escalón
+    P(g, O, dx - 1, dy - 1, dw + 2, dh + 1);
+    P(g, '#6b4423', dx, dy, dw, dh);
+    P(g, '#5a3a1e', dx + 3, dy, 1, dh);
+    P(g, '#5a3a1e', dx + 6, dy, 1, dh);
+    P(g, '#8a5a32', dx, dy, dw, 1);
+    P(g, '#ffd35a', dx + 8, dy + (dh >> 1), 1, 1);
+    // farol junto a la puerta
+    P(g, O, dx + dw + 2, dy + 1, 3, 4);
+    P(g, '#ffe7a0', dx + dw + 3, dy + 2, 1, 2);
+    // zócalo
+    P(g, whiteDD, 1, H - 3, W - 2, 2);
+    P(g, '#c96f4a', dx - 2, H - 3, dw + 4, 3);
+    return c;
+  }
+
+  // El mismo adosado, pero mirando a un lado (face: 'right' | 'left'): se ve la azotea desde arriba
+  // y, en el lado de la fachada, el porche con la viga marrón, las ventanas de las dos plantas y la puerta.
+  function makeMedHouseSide(hs) {
+    const W = hs.w * T, H = hs.h * T + 8;
+    const { c, g } = mk(W, H);
+    const white = '#f8f6f1', whiteD = '#e6e1d6', whiteDD = '#cfc8ba', wood = '#5a3a28', woodD = '#3a2418';
+    const fx = W - 22;          // donde empieza la fachada (a la derecha; para 'left' se voltea)
+    const roofB = H - 8;        // abajo, la cara lateral del muro (8px) da sensación de altura
+
+    // ---- azotea ----
+    P(g, O, 0, 0, fx + 1, roofB + 1);
+    P(g, '#ebe5d7', 1, 1, fx - 1, roofB - 1);
+    for (let y = 4; y < roofB - 1; y += 8) P(g, '#ddd5c4', 2, y, fx - 3, 1);
+    P(g, white, 1, 1, fx - 1, 2);
+    P(g, white, 1, roofB - 2, fx - 1, 2);
+    P(g, white, 1, 1, 2, roofB - 1);
+    // caseta de la escalera
+    P(g, O, 4, 4, 14, 16);
+    P(g, white, 5, 5, 12, 14);
+    P(g, whiteD, 5, 15, 12, 4);
+    // pérgola sobre la parte de delante de la azotea
+    const py0 = 5, py1 = roofB - 6;
+    for (let y = py0; y <= py1; y += 4) P(g, wood, fx - 26, y, 22, 2);
+    P(g, woodD, fx - 26, py0, 2, py1 - py0 + 2);
+    P(g, woodD, fx - 6, py0, 2, py1 - py0 + 2);
+    // pretil de delante de la azotea, con la barandilla de madera
+    P(g, white, fx - 3, 1, 3, roofB - 1);
+    P(g, wood, fx - 1, 2, 1, roofB - 3);
+
+    // ---- fachada: planta de arriba (franja estrecha) y planta baja con porche ----
+    P(g, O, fx, 0, W - fx, roofB + 1);
+    P(g, white, fx + 1, 1, 8, roofB - 1);                 // planta de arriba
+    P(g, whiteD, fx + 1, 1, 8, 3);
+    P(g, wood, fx + 9, 0, 3, roofB + 1);                   // viga del porche
+    P(g, woodD, fx + 12, 0, 1, roofB + 1);
+    P(g, white, fx + 13, 1, W - fx - 14, roofB - 1);      // planta baja
+    P(g, whiteD, fx + 13, 1, 3, roofB - 1);               // sombra del porche
+    const mid = Math.round(roofB / 2);
+    // ventanas de la planta de arriba
+    [[mid - 14], [mid + 6]].forEach(([wy]) => {
+      P(g, O, fx + 2, wy - 1, 6, 10);
+      P(g, '#3d4a5a', fx + 3, wy, 4, 8);
+      P(g, '#6f8aa6', fx + 3, wy, 1, 8);
+    });
+    // puerta (en la fila del medio) y ventana de la planta baja
+    P(g, O, fx + 15, mid - 6, 6, 13);
+    P(g, '#6b4423', fx + 16, mid - 5, 4, 11);
+    P(g, '#8a5a32', fx + 16, mid - 5, 4, 1);
+    P(g, '#ffd35a', fx + 17, mid + 1, 1, 1);
+    P(g, '#c96f4a', W - 2, mid - 7, 2, 15);               // escalón de barro
+    P(g, O, fx + 15, mid - 21, 6, 10);
+    P(g, '#3d4a5a', fx + 16, mid - 20, 4, 8);
+    P(g, O, fx + 15, mid + 12, 6, 6);
+    P(g, '#3d4a5a', fx + 16, mid + 13, 4, 4);
+    // pilares del porche
+    [[1], [roofB - 5]].forEach(([y]) => { P(g, O, fx + 12, y - 1, 8, 6); P(g, white, fx + 13, y, 6, 4); P(g, whiteDD, fx + 13, y + 3, 6, 1); });
+
+    // ---- cara lateral del muro, abajo ----
+    P(g, O, 0, roofB, W, 8);
+    P(g, whiteD, 1, roofB, W - 2, 7);
+    P(g, whiteDD, 1, H - 2, W - 2, 1);
+    P(g, wood, fx + 9, roofB, 3, 7);
+    return hs.face === 'left' ? flipped(c) : c;
   }
 
   function makeHouse(hs) {
@@ -661,6 +1006,189 @@ const Art = (() => {
     return c;
   }
 
+  // ---------- muebles de exterior ----------
+  function makePatioTable() {
+    const { c, g } = mk(32, 22);
+    ell(g, C.shadow, 16, 20.5, 14, 1.5);
+    orect(g, '#d9d4c8', 4, 10, 2, 10);
+    orect(g, '#d9d4c8', 26, 10, 2, 10);
+    orect(g, '#ffffff', 1, 5, 30, 7);
+    for (let x = 1; x < 31; x += 4) for (let y = 5; y < 12; y += 4) P(g, '#e05a5a', x + ((y >> 2) % 2) * 2, y, 2, 2);
+    P(g, '#c84848', 1, 11, 30, 1);
+    // jarra de limonada y vasos
+    orect(g, '#fff3a0', 7, 0, 5, 7);
+    P(g, '#f2d040', 7, 3, 5, 4);
+    P(g, '#ffffff', 8, 1, 1, 2);
+    orect(g, '#e8f6ff', 17, 3, 3, 4);
+    P(g, '#f2d040', 17, 5, 3, 2);
+    orect(g, '#e8f6ff', 23, 4, 3, 3);
+    return c;
+  }
+
+  // Silla de jardín de plástico blanco, vista de frente.
+  function makeGardenChair() {
+    const { c, g } = mk(T, 18);
+    ell(g, C.shadow, 8, 16.5, 6, 1.5);
+    orect(g, '#dcd8ce', 3, 10, 2, 6);
+    orect(g, '#dcd8ce', 11, 10, 2, 6);
+    orect(g, '#ffffff', 2, 8, 12, 3);
+    orect(g, '#f2efe6', 3, 1, 10, 7);
+    P(g, '#dcd8ce', 5, 3, 6, 1);
+    P(g, '#dcd8ce', 5, 5, 6, 1);
+    P(g, '#ffffff', 3, 1, 10, 1);
+    return c;
+  }
+
+  // Poste con farolillo; los banderines se atan arriba.
+  function makePole() {
+    const { c, g } = mk(T, 38);
+    ell(g, C.shadow, 8, 36.5, 4, 1.2);
+    orect(g, C.trunk, 7, 6, 2, 30);
+    P(g, C.trunkL, 7, 6, 1, 30);
+    orect(g, '#f2c14e', 5, 0, 6, 6);
+    P(g, '#fff3b0', 6, 1, 4, 3);
+    return c;
+  }
+
+  function makePartyTable() {
+    const { c, g } = mk(48, 32);
+    ell(g, C.shadow, 24, 30.5, 22, 1.5);
+    orect(g, '#e27d8a', 1, 16, 46, 13);
+    for (let x = 3; x < 46; x += 6) P(g, '#f4a3ae', x, 18, 3, 11);
+    P(g, '#c95f6d', 1, 28, 46, 1);
+    orect(g, '#ffffff', 1, 13, 46, 4);
+    // tarta de dos pisos con velas
+    orect(g, '#f6e6c8', 6, 7, 16, 7);
+    P(g, '#e27d8a', 6, 7, 16, 2);
+    for (let x = 7; x < 22; x += 3) P(g, '#e27d8a', x, 9, 1, 1);
+    orect(g, '#f6e6c8', 9, 2, 10, 5);
+    P(g, '#8a4fbf', 9, 2, 10, 2);
+    [10, 13, 16].forEach((x, i) => {
+      P(g, ['#4f9fe0', '#5cc96a', '#e04a5a'][i], x, 1, 1, 2);
+      P(g, '#ffd35a', x, 0, 1, 1);
+    });
+    // vasos y patatas
+    [[27, '#e04a5a'], [31, '#4f9fe0'], [35, '#5cc96a']].forEach(([x, col]) => {
+      orect(g, col, x, 9, 3, 4);
+      P(g, '#ffffff', x, 9, 3, 1);
+    });
+    oell(g, '#f4efe4', 42, 11, 4, 2);
+    ell(g, '#f2c14e', 42, 10, 3, 1.5);
+    P(g, '#e0a030', 41, 10); P(g, '#e0a030', 43, 9);
+    return c;
+  }
+
+  function makeSpeaker() {
+    const { c, g } = mk(T, 28);
+    ell(g, C.shadow, 8, 26.5, 7, 1.5);
+    orect(g, '#2a2a30', 2, 2, 12, 24);
+    P(g, '#3a3a44', 2, 2, 12, 1);
+    oell(g, '#4a4a55', 8, 8, 3, 3, '#18181c');
+    P(g, '#8a8a96', 7, 7, 2, 2);
+    oell(g, '#4a4a55', 8, 18, 4.5, 4.5, '#18181c');
+    ell(g, '#2a2a30', 8, 18, 2, 2);
+    P(g, '#5cc96a', 11, 24);
+    return c;
+  }
+
+  // Tumbona vista desde arriba (respaldo arriba).
+  function makeLounger() {
+    const { c, g } = mk(T, 32);
+    ell(g, C.shadow, 8, 30.5, 7, 1.5);
+    orect(g, '#ffffff', 2, 1, 12, 28);
+    P(g, '#4f9fe0', 3, 2, 10, 26);
+    for (let y = 4; y < 28; y += 4) P(g, '#ffffff', 3, y, 10, 2);
+    P(g, '#d9d4c8', 2, 10, 12, 1);
+    orect(g, '#f2c14e', 4, 15, 8, 5);
+    P(g, '#e0a030', 4, 17, 8, 1);
+    return c;
+  }
+
+  // Flotador de donut (plano: se pinta sobre el agua).
+  function makeFloat() {
+    const { c, g } = mk(T, T);
+    ell(g, 'rgba(0,60,90,0.25)', 9, 10, 7, 4);
+    oell(g, '#f48ab0', 8, 8, 6.5, 5);
+    ell(g, '#f9b6cf', 7, 7, 4, 2.5);
+    oell(g, '#4cc0e6', 8, 8, 2.5, 1.6);
+    [[4, 6, '#ffd35a'], [11, 6, '#5cc96a'], [6, 11, '#4f9fe0'], [11, 10, '#ffffff']].forEach(([x, y, col]) => P(g, col, x, y, 2, 1));
+    return c;
+  }
+
+  function makeGift() {
+    const { c, g } = mk(T, T);
+    ell(g, C.shadow, 8, 14.5, 7, 1.5);
+    orect(g, '#4f9fe0', 2, 6, 12, 8);
+    P(g, '#3a7fc0', 2, 12, 12, 2);
+    orect(g, '#7cc3f0', 1, 4, 14, 3);
+    P(g, '#f2c14e', 7, 4, 2, 10);
+    P(g, '#f2c14e', 4, 1, 3, 3); P(g, '#f2c14e', 9, 1, 3, 3);
+    P(g, '#e0a030', 7, 3, 2, 1);
+    return c;
+  }
+
+  function makeBench() {
+    const { c, g } = mk(32, 20);
+    ell(g, C.shadow, 16, 18.5, 14, 1.5);
+    [4, 26].forEach(x => orect(g, '#3a3a40', x, 10, 2, 8));
+    orect(g, C.wood, 2, 1, 28, 3);
+    P(g, C.woodL, 2, 1, 28, 1);
+    orect(g, C.wood, 2, 8, 28, 3);
+    P(g, C.woodL, 2, 8, 28, 1);
+    P(g, C.woodD, 2, 10, 28, 1);
+    [4, 26].forEach(x => orect(g, '#3a3a40', x, 3, 2, 5));
+    return c;
+  }
+
+  // Baliza de luz negra, como las de los caminos de la urbanización.
+  function makeBollard() {
+    const { c, g } = mk(T, 20);
+    ell(g, C.shadow, 8, 18.5, 3.5, 1.2);
+    orect(g, '#2e2e33', 6, 4, 4, 14);
+    P(g, '#46464d', 6, 4, 1, 14);
+    P(g, '#fff3c0', 6, 6, 4, 2);
+    P(g, '#1e1e22', 5, 3, 6, 1);
+    return c;
+  }
+
+  // Coche aparcado, visto de lado.
+  function makeCar(col) {
+    const { c, g } = mk(32, 22);
+    ell(g, C.shadow, 16, 20, 15, 2);
+    orect(g, col, 1, 9, 30, 8);
+    orect(g, col, 7, 3, 17, 7);
+    P(g, '#bfe4f4', 9, 4, 6, 5); P(g, '#bfe4f4', 16, 4, 6, 5);
+    P(g, '#ffffff', 10, 5, 2, 1);
+    P(g, shade(col, 0.3), 1, 9, 30, 1);
+    P(g, shade(col, -0.3), 1, 15, 30, 2);
+    P(g, '#ffd35a', 29, 11, 2, 2); P(g, '#e04a4a', 1, 11, 2, 2);
+    [7, 24].forEach(x => { oell(g, '#2a2a30', x, 17, 3, 3); P(g, '#a4aab1', x - 1, 16, 2, 2); });
+    return c;
+  }
+
+  function makeSwing() {
+    const { c, g } = mk(48, 32);
+    ell(g, C.shadow, 24, 30.5, 22, 1.5);
+    orect(g, '#c23b3b', 1, 2, 46, 3);
+    [[2, '#c23b3b'], [44, '#c23b3b']].forEach(([x, col]) => orect(g, col, x, 4, 2, 26));
+    [14, 30].forEach(x => {
+      P(g, '#9a9a9a', x, 5, 1, 17); P(g, '#9a9a9a', x + 5, 5, 1, 17);
+      orect(g, '#f2c14e', x - 1, 22, 8, 2);
+    });
+    return c;
+  }
+
+  function makeSlide() {
+    const { c, g } = mk(32, 30);
+    ell(g, C.shadow, 16, 28.5, 15, 1.5);
+    orect(g, '#4f9fe0', 2, 4, 3, 24);
+    orect(g, '#4f9fe0', 9, 4, 3, 24);
+    for (let y = 8; y < 27; y += 4) P(g, '#3a7fc0', 5, y, 4, 1);
+    orect(g, '#4f9fe0', 2, 3, 10, 3);
+    for (let i = 0; i < 20; i++) P(g, i < 2 ? O : '#f2c14e', 12 + i, 4 + i, 2, 3);
+    return c;
+  }
+
   // Muebles: tamaño en casillas. Los planos no bloquean el paso y se pintan en el suelo.
   const FURNITURE = {
     bed: { w: 2, h: 2, make: () => bed(null) },
@@ -673,6 +1201,21 @@ const Art = (() => {
     calendar: { w: 1, h: 1, flat: true, make: makeCalendar },
     rug: { w: 4, h: 3, flat: true, make: makeRug },
     sunbeam: { w: 3, h: 3, flat: true, make: makeSunbeam },
+    patiotable: { w: 2, h: 1, make: makePatioTable },
+    gardenchair: { w: 1, h: 1, make: makeGardenChair },
+    pole: { w: 1, h: 1, make: makePole },
+    partytable: { w: 3, h: 1, make: makePartyTable },
+    speaker: { w: 1, h: 1, make: makeSpeaker },
+    lounger: { w: 1, h: 2, make: makeLounger },
+    float: { w: 1, h: 1, flat: true, make: makeFloat },
+    gift: { w: 1, h: 1, make: makeGift },
+    car: { w: 2, h: 1, make: () => makeCar('#c23b3b') },
+    carblue: { w: 2, h: 1, make: () => makeCar('#3b6fc4') },
+    carwhite: { w: 2, h: 1, make: () => makeCar('#ecebe6') },
+    swing: { w: 3, h: 1, make: makeSwing },
+    bench: { w: 2, h: 1, make: makeBench },
+    bollard: { w: 1, h: 1, make: makeBollard },
+    slide: { w: 2, h: 1, make: makeSlide },
   };
   const furnitureImgs = {};
 
@@ -685,6 +1228,7 @@ const Art = (() => {
 
   const treeImgs = [];
   const staticCache = {};
+  const BALLOON_COLS = ['#e04a5a', '#f2c14e', '#4f9fe0', '#c77dff', '#5cc96a'];
 
   function buildStatics(map, furnitureList = []) {
     if (!treeImgs.length) treeImgs.push(makeTree(11), makeTree(42), makeTree(97));
@@ -711,11 +1255,35 @@ const Art = (() => {
             staticCache[key] = makeFence(at(x - 1, y) === 'f', at(x + 1, y) === 'f', at(x, y - 1) === 'f', at(x, y + 1) === 'f');
           }
           list.push({ img: staticCache[key], dx: x * T, dy: y * T, base });
+        } else if (ch === 'w') {
+          const nb = [at(x - 1, y), at(x + 1, y), at(x, y - 1), at(x, y + 1)].map(v => v === 'w');
+          const key = 'wall' + nb.map(Number).join('');
+          if (!staticCache[key]) staticCache[key] = makeWall(...nb);
+          list.push({ img: staticCache[key], dx: x * T, dy: base - 28, base });
+        } else if (ch === 'h') {
+          const l = at(x - 1, y) === 'h', r = at(x + 1, y) === 'h';
+          const key = `hedge${+l}${+r}`;
+          if (!staticCache[key]) staticCache[key] = makeHedge(l, r);
+          list.push({ img: staticCache[key], dx: x * T, dy: base - 24, base });
+        } else if (ch === 'g') {
+          const col = BALLOON_COLS[(x * 3 + y * 7) % BALLOON_COLS.length];
+          const key = 'balloon' + col;
+          if (!staticCache[key]) staticCache[key] = [-1, 0, 1, 0].map(s => makeBalloon(col, s));
+          const frames = staticCache[key];
+          list.push({ img: frames[0], frames, dx: x * T, dy: base - 34, base });
+        } else if (ch === 'Y') {
+          if (!staticCache.palms) staticCache.palms = [makePalm(3), makePalm(8), makePalm(21)];
+          list.push({ img: staticCache.palms[(x * 5 + y * 3) % 3], dx: x * T - 8, dy: base - 48, base });
+        } else if (ch === 'n') {
+          if (!staticCache.note) staticCache.note = makeNote();
+          list.push({ img: staticCache.note, dx: x * T, dy: y * T, base });
         }
       }
     }
     (map.houses || []).forEach(hs => {
-      list.push({ img: makeHouse(hs), dx: hs.x * T, dy: hs.y * T - 8, base: (hs.y + hs.h) * T });
+      const side = hs.face === 'left' || hs.face === 'right';
+      const img = (hs.style !== 'med' ? makeHouse : side ? makeMedHouseSide : makeMedHouse)(hs);
+      list.push({ img, dx: hs.x * T, dy: (hs.y + hs.h) * T - img.height, base: (hs.y + hs.h) * T });
     });
     furnitureList.filter(f => !f.flat).forEach(f => {
       const base = (f.y + f.h) * T;
@@ -1085,5 +1653,5 @@ const Art = (() => {
   // Primitivas de dibujo para otros módulos (p. ej. el minijuego de persecución).
   const util = { O, mk, P, ell, oell, orect, shade };
 
-  return { T, ground, room, furniture, bed, buildStatics, charSheet, portrait, util };
+  return { T, ground, room, furniture, bed, arrow, buildStatics, charSheet, portrait, util };
 })();

@@ -187,6 +187,13 @@ const Sfx = (() => {
 
   return {
     unlock,
+    // ¡Sorpresa!: gente gritando y matasuegras.
+    cheer: () => {
+      hiss({ freq: 900, freqEnd: 1300, q: 0.8, dur: 1.4, vol: 0.22, attack: 0.08 });
+      hiss({ freq: 1900, freqEnd: 2400, q: 1.5, dur: 1.1, vol: 0.12, attack: 0.05, delay: 0.1 });
+      [0, 0.25, 0.55].forEach((d, i) => tone({ freq: 380 + i * 60, freqEnd: 560 + i * 80, type: 'sawtooth', dur: 0.35, vol: 0.08, delay: d }));
+      [523, 659, 784, 1047].forEach((f, i) => tone({ freq: f, dur: 0.12, vol: 0.12, type: 'triangle', delay: 0.9 + i * 0.08 }));
+    },
     cursor: () => tone({ freq: 880, dur: 0.05, vol: 0.18 }),
     confirm: () => {
       tone({ freq: 660, dur: 0.07, vol: 0.2 });

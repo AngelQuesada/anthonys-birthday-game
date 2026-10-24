@@ -7,7 +7,7 @@
   const FONT = '"Pixelify Sans", "Trebuchet MS", sans-serif';
   const TEXT_FONT = `28px ${FONT}`;
   const TEXT_SPEED = 0.7; // caracteres por frame
-  const SOLID = new Set(['T', 'b', 'r', 'f', 's', '~', 'X', 'W']);
+  const SOLID = new Set(['T', 'b', 'r', 'f', 's', '~', 'X', 'W', 'h', 'g', 'n', 'P', 'w']);
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
@@ -56,30 +56,15 @@
     dialog: null,
     cut: null,
     mini: null,
-    battleStyle: loadStyle(),
     restart: null,
     bedPose: null,
     visited: new Set(),
+    flags: new Set(), // cinemáticas de `triggers` ya vistas
     banner: 0,
     creditsY: H,
     fade: { a: 1, target: 0, cb: null },
     leaves: Array.from({ length: 18 }, () => newLeaf(true)),
   };
-
-  // Estilo de la batalla elegido en el título; se recuerda en este navegador.
-  function loadStyle() {
-    try {
-      const s = localStorage.getItem('battleStyle');
-      if (s && Battle.views[s]) return s;
-    } catch (e) { /* sin almacenamiento: estilo por defecto */ }
-    return 'top';
-  }
-
-  function cycleStyle(step) {
-    const ids = Object.keys(Battle.views);
-    G.battleStyle = ids[(ids.indexOf(G.battleStyle) + step + ids.length) % ids.length];
-    try { localStorage.setItem('battleStyle', G.battleStyle); } catch (e) { /* no pasa nada */ }
-  }
 
   function newLeaf(anywhere) {
     return {
@@ -108,7 +93,7 @@
     const doors = {};
     (def.houses || []).forEach(hs => {
       for (let y = hs.y; y < hs.y + hs.h; y++) for (let x = hs.x; x < hs.x + hs.w; x++) solid[y][x] = true;
-      doors[`${hs.x + Math.floor(hs.w / 2)},${hs.y + hs.h - 1}`] = hs;
+      doors[doorTile(hs).join(',')] = hs;
     });
     const furniture = (def.furniture || []).map(f => ({ ...f, ...Art.furniture(f.type) }));
     furniture.forEach(f => {
@@ -119,10 +104,19 @@
     return {
       id, def, w, h, solid, doors,
       bed: furniture.find(f => f.type === 'bed'),
-      ground: room ? [room, room, room] : [0, 1, 2].map(f => Art.ground(def.tiles, f)),
+      ground: room ? [room, room, room] : [0, 1, 2].map(f => Art.ground(def.tiles, f, furniture)),
       statics: Art.buildStatics(def, furniture),
       npcs: (def.npcs || []).map(n => makeEntity(n.char, n.x, n.y, n.dir, n)),
     };
+  }
+
+  // Casilla de la puerta según hacia dónde mira la casa (face: down por defecto, left o right).
+  // Para llamar o entrar hay que andar hacia ella en la dirección contraria (OPP[face]).
+  function doorTile(hs) {
+    const face = hs.face || 'down';
+    if (face === 'right') return [hs.x + hs.w - 1, hs.y + Math.floor(hs.h / 2)];
+    if (face === 'left') return [hs.x, hs.y + Math.floor(hs.h / 2)];
+    return [hs.x + Math.floor(hs.w / 2), hs.y + hs.h - 1];
   }
 
   function makeEntity(charKey, x, y, dir, def = null) {
@@ -143,7 +137,10 @@
 
   function blocked(x, y, self) {
     const w = G.world;
-    if (x < 0 || y < 0 || x >= w.w || y >= w.h || w.solid[y][x]) return true;
+    if (x < 0 || y < 0 || x >= w.w || y >= w.h) return true;
+    // quien nada solo puede moverse por el agua de la piscina
+    const swims = self && self.def && self.def.swim;
+    if (swims ? w.def.tiles[y][x] !== 'P' : w.solid[y][x]) return true;
     return entities().some(e => e !== self && ((e.x === x && e.y === y) || (e.moving && e.fromX === x && e.fromY === y)));
   }
 
@@ -174,13 +171,30 @@
     return e.moveT / e.speed < 0.7 ? (e.parity ? 1 : 2) : 0;
   }
 
-  function startGame() {
-    G.restart = startGame;
-    const story = STORY.opening;
-    G.visited = new Set([story.map]);
-    enterMap(story.map, story.spawn.x, story.spawn.y, story.spawn.dir, false);
-    startCutscene(story.steps);
+  // Empieza un nivel de LEVELS (data.js) desde cero; «Reiniciar» en la pausa vuelve a empezarlo.
+  function startLevel(lv) {
+    G.restart = () => startLevel(lv);
+    G.visited = new Set();
+    G.flags = new Set();
+    G.dialog = null;
+    G.cut = null;
+    G.mini = null;
+    G.bedPose = null;
+    if (lv.minigame) {
+      G.player = null;
+      return startMinigame(lv.minigame, () => fadeTo(toTitle));
+    }
+    if (lv.story) {
+      const story = STORY[lv.story];
+      G.visited.add(story.map);
+      enterMap(story.map, story.spawn.x, story.spawn.y, story.spawn.dir, false);
+      return startCutscene(story.steps);
+    }
+    const start = MAPS[lv.map].playerStart;
+    enterMap(lv.map, start.x, start.y, start.dir, true);
   }
+
+  const startGame = () => startLevel(LEVELS[0]);
 
   function toTitle() {
     G.scene = 'title';
@@ -190,7 +204,7 @@
     G.cut = null;
     G.mini = null;
     G.bedPose = null;
-    G.world = createWorld('aldea');
+    G.world = createWorld(TITLE_MAP);
   }
 
   // arrive: al llegar andando se muestra el nombre del sitio y, la primera vez, su intro.
@@ -220,29 +234,19 @@
   }
 
   // Minijuegos: módulos con create(onWin), update(st, input), drawWorld(st, wctx) y drawHud(st, ctx, ui).
-  // La batalla se juega en el estilo elegido en el menú de título (Battle.views).
   const MINIGAMES = { chase: Battle };
 
   function startMinigame(id, onWin) {
     const game = MINIGAMES[id];
-    G.mini = { game, st: game.create(onWin, G.battleStyle) };
+    G.mini = { game, st: game.create(onWin) };
     G.scene = 'minigame';
   }
 
-  // Atajo del título: la batalla sola; al ganar se vuelve al título.
-  function startBattle() {
-    G.restart = startBattle;
-    G.player = null;
-    G.dialog = null;
-    G.cut = null;
-    G.bedPose = null;
-    startMinigame('chase', () => fadeTo(toTitle));
-  }
-
   function endCutscene() {
+    const quiet = G.cut.quiet;
     G.cut = null;
     G.scene = 'play';
-    G.banner = 200;
+    if (!quiet) G.banner = 200;
   }
 
   function setPose(pose) {
@@ -260,6 +264,7 @@
     if ('dark' in s) { c.dark = s.dark; return nextStep(); }
     if ('sfx' in s) { Sfx[s.sfx](); return nextStep(); }
     if ('pose' in s) { setPose(s.pose); return nextStep(); }
+    if ('face' in s) { G.world.npcs.forEach(n => faceTo(n, G.player.x, G.player.y)); return nextStep(); }
     // pasos con duración
     if ('fade' in s) c.from = c.dark;
     if ('bubble' in s) c.bubble = { text: s.bubble, shown: 0, lastBlip: 0, hold: s.hold || 60, anim: 0 };
@@ -320,6 +325,12 @@
     }
   }
 
+  function faceTo(n, x, y) {
+    const dx = x - n.x, dy = y - n.y;
+    n.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    n.restoreT = 240;
+  }
+
   // ---------- interacción y diálogos ----------
   function interact() {
     const p = G.player, w = G.world;
@@ -338,7 +349,7 @@
     const sign = (w.def.signs || {})[`${tx},${ty}`];
     if (sign) return startDialog(sign);
     const house = w.doors[`${tx},${ty}`];
-    if (!house || p.dir !== 'up') return;
+    if (!house || p.dir !== OPP[house.face || 'down']) return;
     if (house.enter) goTo(house.enter);
     else startDialog(house.locked || [{ text: 'La puerta está cerrada.' }]);
   }
@@ -416,6 +427,14 @@
     if (p.moving) return;
     const exit = wasMoving && (G.world.def.exits || {})[`${p.x},${p.y}`];
     if (exit) return goTo(exit);
+    const trig = wasMoving && (G.world.def.triggers || []).find(tr => !G.flags.has(tr.id)
+      && p.x >= tr.area[0] && p.y >= tr.area[1] && p.x <= tr.area[2] && p.y <= tr.area[3]);
+    if (trig) {
+      G.flags.add(trig.id);
+      startCutscene(trig.steps);
+      if (G.cut) G.cut.quiet = true; // a mitad de mapa no hace falta volver a mostrar su nombre
+      return;
+    }
     if (hit('Space')) return interact();
     const d = dirStack[dirStack.length - 1];
     if (!d) { p.turnWait = 0; return; }
@@ -425,7 +444,7 @@
     if (tryMove(p, d)) return;
     const [dx, dy] = DIRS[d];
     const house = G.world.doors[`${p.x + dx},${p.y + dy}`];
-    if (house && house.enter && d === 'up') return goTo(house.enter);
+    if (house && house.enter && d === OPP[house.face || 'down']) return goTo(house.enter);
     if (p.bumpCd === 0) {
       Sfx.bump();
       p.bumpCd = 24;
@@ -435,7 +454,12 @@
   function updateNpcs(ai) {
     G.world.npcs.forEach(n => {
       stepEntity(n);
+      if (n.def.dance) n.hop = Math.abs(Math.sin(G.t / 9 + n.def.x)) * 3;
       if (!ai) return;
+      // los que bailan cambian de pose al ritmo, salvo justo después de hablar con ellos
+      if (n.def.dance && n.restoreT === 0 && (G.t + n.def.x * 11) % 44 === 0) {
+        n.dir = ['down', 'left', 'down', 'right'][((G.t / 44) | 0) % 4];
+      }
       if (n.restoreT > 0 && --n.restoreT === 0) n.dir = n.homeDir;
       if (!n.def.wander || n.moving || --n.timer > 0) return;
       n.timer = 70 + ((Math.random() * 150) | 0);
@@ -473,16 +497,23 @@
       case 'title':
         if (locked) break;
         menuNav(TITLE_MENU.length, 'menu');
-        if (G.menu === 2 && (hit('ArrowLeft') || hit('ArrowRight') || hit('Space'))) {
-          cycleStyle(hit('ArrowLeft') ? -1 : 1);
-          Sfx.cursor();
-        } else if (hit('Space')) {
+        if (hit('Space')) {
           Sfx.confirm();
           if (G.menu === 0) fadeTo(startGame);
-          else if (G.menu === 1) fadeTo(startBattle);
+          else if (G.menu === 1) { G.scene = 'levels'; G.levelMenu = 0; G.levelMsg = 0; }
           else { G.scene = 'credits'; G.creditsY = H; }
         }
         break;
+      case 'levels': {
+        if (G.levelMsg > 0) G.levelMsg--;
+        if (locked) break;
+        menuNav(LEVELS.length + 1, 'levelMenu'); // la última opción es «Volver»
+        const lv = LEVELS[G.levelMenu];
+        if (hit('Escape') || (hit('Space') && !lv)) { Sfx.cancel(); G.scene = 'title'; }
+        else if (hit('Space') && lv.soon) { Sfx.bump(); G.levelMsg = 120; }
+        else if (hit('Space')) { Sfx.confirm(); fadeTo(() => startLevel(lv)); }
+        break;
+      }
       case 'credits':
         G.creditsY -= 0.9;
         if (G.creditsY < -CREDITS.length * 46 - 40) G.creditsY = H;
@@ -540,8 +571,43 @@
     wctx.fillRect(0, 0, VIEW_W, VIEW_H);
     wctx.drawImage(w.ground[Math.floor(G.t / 28) % 3], -camX, -camY);
 
-    (w.def.decor || []).forEach(dc => {
-      if (dc.type !== 'bobber') return;
+    (w.def.decor || []).forEach(dc => drawDecor(dc, camX, camY, false));
+    w.npcs.forEach(n => {
+      if (!n.def.swim) return;
+      const ring = ((G.t + n.def.x * 17) % 90) / 90;
+      wctx.strokeStyle = `rgba(230,250,255,${0.9 - ring * 0.9})`;
+      wctx.beginPath();
+      wctx.ellipse(Math.round(n.px) + 8 - camX, Math.round(n.py) + 13 - camY, 6 + ring * 5, 2 + ring * 2, 0, 0, Math.PI * 2);
+      wctx.stroke();
+    });
+
+    const list = w.statics.slice();
+    entities().forEach(e => {
+      if (e.hidden) return;
+      const img = e.sheet[e.dir][animFrame(e)];
+      // en la piscina solo asoman la cabeza y los hombros
+      if (e.def && e.def.swim) {
+        const bob = Math.round(Math.sin(G.t / 20 + e.def.x));
+        list.push({ img, dx: Math.round(e.px), dy: Math.round(e.py - 2 + bob), base: e.py + T + 0.5, crop: 15 - bob });
+        return;
+      }
+      list.push({ img, dx: Math.round(e.px), dy: Math.round(e.py - 8 - (e.hop || 0)), base: e.py + T + 0.5 });
+    });
+    list.sort((a, b) => a.base - b.base);
+    list.forEach(o => {
+      const x = o.dx - camX, y = o.dy - camY;
+      if (x > VIEW_W || y > VIEW_H || x + o.img.width < 0 || y + o.img.height < 0) return;
+      if (o.crop) return wctx.drawImage(o.img, 0, 0, o.img.width, o.crop, x, y, o.img.width, o.crop);
+      const img = o.frames ? o.frames[Math.floor((G.t + o.dx) / 24) % o.frames.length] : o.img;
+      wctx.drawImage(o.type === 'bed' && G.bedPose ? bedImage() : img, x, y);
+    });
+    (w.def.decor || []).forEach(dc => drawDecor(dc, camX, camY, true));
+  }
+
+  // Decoración animada. top: la que va por encima de personajes y objetos (banderines, confeti).
+  const PARTY_COLS = ['#e04a5a', '#f2c14e', '#4f9fe0', '#c77dff', '#5cc96a', '#ff9ecd'];
+  function drawDecor(dc, camX, camY, top) {
+    if (dc.type === 'bobber' && !top) {
       const bx = dc.x * T + 8 - camX, by = dc.y * T + 8 - camY + Math.round(Math.sin(G.t / 18));
       const ring = (G.t % 120) / 120;
       wctx.strokeStyle = `rgba(216,241,255,${0.8 - ring * 0.8})`;
@@ -551,19 +617,36 @@
       wctx.fillStyle = '#2b1d16'; wctx.fillRect(bx - 1, by - 2, 4, 5);
       wctx.fillStyle = '#e04a4a'; wctx.fillRect(bx, by - 1, 2, 2);
       wctx.fillStyle = '#ffffff'; wctx.fillRect(bx, by + 1, 2, 1);
-    });
-
-    const list = w.statics.slice();
-    entities().forEach(e => {
-      if (e.hidden) return;
-      list.push({ img: e.sheet[e.dir][animFrame(e)], dx: Math.round(e.px), dy: Math.round(e.py - 8 - (e.hop || 0)), base: e.py + T + 0.5 });
-    });
-    list.sort((a, b) => a.base - b.base);
-    list.forEach(o => {
-      const x = o.dx - camX, y = o.dy - camY;
-      if (x > VIEW_W || y > VIEW_H || x + o.img.width < 0 || y + o.img.height < 0) return;
-      wctx.drawImage(o.type === 'bed' && G.bedPose ? bedImage() : o.img, x, y);
-    });
+    } else if (dc.type === 'arrow' && !top) {
+      wctx.drawImage(Art.arrow(dc.dir), dc.x * T - camX, dc.y * T - camY);
+    } else if (dc.type === 'bunting' && top) {
+      // cuerda que cuelga entre los dos postes, con banderines que se mecen
+      const x0 = dc.x0 * T + 8, x1 = dc.x1 * T + 8, y0 = dc.y * T + T - 34;
+      const sag = (x1 - x0) * 0.08;
+      for (let x = x0; x <= x1; x++) {
+        const y = Math.round(y0 + Math.sin(((x - x0) / (x1 - x0)) * Math.PI) * sag);
+        wctx.fillStyle = '#2b1d16';
+        wctx.fillRect(x - camX, y - camY, 1, 1);
+        if ((x - x0) % 8 !== 4) continue;
+        const sway = Math.round(Math.sin(G.t / 15 + x / 9));
+        wctx.fillStyle = PARTY_COLS[((x - x0) >> 3) % PARTY_COLS.length];
+        for (let i = 0; i < 6; i++) {
+          const half = 3 - (i >> 1);
+          wctx.fillRect(x - half + (i > 2 ? sway : 0) - camX, y + 1 + i - camY, half * 2, 1);
+        }
+      }
+    } else if (dc.type === 'confetti' && top) {
+      // sin estado: cada trocito cae en bucle según G.t
+      const [ax, ay, bx, by] = dc.area;
+      const w = (bx - ax + 1) * T, h = (by - ay + 1) * T;
+      for (let i = 0; i < 40; i++) {
+        const r1 = Math.abs((Math.sin(i * 12.9898) * 43758.5453) % 1), r2 = Math.abs((Math.sin(i * 78.233) * 12345.678) % 1);
+        const x = ax * T + r1 * w + Math.sin(G.t / 25 + i) * 4;
+        const y = ay * T - 20 + ((r2 * h + G.t * (0.25 + r1 * 0.35)) % (h + 20));
+        wctx.fillStyle = PARTY_COLS[i % PARTY_COLS.length];
+        wctx.fillRect(Math.round(x - camX), Math.round(y - camY), (G.t + i * 7) % 20 < 10 ? 2 : 1, 2);
+      }
+    }
   }
 
   function bedImage() {
@@ -684,8 +767,8 @@
   }
 
   // ---------- escenas ----------
-  // «Estilo» elige cómo se ve la batalla (cenital o 3D), tanto en «Probar batalla» como en la historia.
-  const TITLE_MENU = ['Nueva partida', 'Probar batalla', 'Estilo', 'Créditos'];
+  const TITLE_MAP = 'urba'; // mapa que se ve de fondo en el título y los créditos
+  const TITLE_MENU = ['Nueva partida', 'Elegir nivel', 'Créditos'];
 
   function drawTitle() {
     titleBackground();
@@ -713,12 +796,37 @@
     ctx.fillText('Anthonys Bday', W / 2, y);
     text('— A quien no le va a gustar! —', W / 2, y + 78, { size: 26, align: 'center', color: '#fbe9d0' });
 
-    panel(280, 340, 400, 262);
-    const items = TITLE_MENU.map(o => (o === 'Estilo' ? `Estilo:  < ${Battle.views[G.battleStyle].name} >` : o));
-    menuList(items, G.menu, W / 2, 386, 56);
+    panel(280, 340, 400, 206);
+    menuList(TITLE_MENU, G.menu, W / 2, 386, 56);
 
-    const hint = G.menu === 2 ? '← →  cambiar estilo de batalla' : '↑ ↓  elegir     ESPACIO  aceptar';
-    text(hint, W / 2, 680, { size: 20, align: 'center', color: 'rgba(255,240,220,0.8)' });
+    text('↑ ↓  elegir     ESPACIO  aceptar', W / 2, 680, { size: 20, align: 'center', color: 'rgba(255,240,220,0.8)' });
+  }
+
+  function drawLevels() {
+    titleBackground();
+    vignette('rgba(25,10,35,0.7)', 'rgba(25,10,35,0.35)', 'rgba(25,10,35,0.8)');
+    drawLeaves();
+    text('Elegir nivel', W / 2, 130, { size: 60, align: 'center', color: '#ffd45e', weight: 700 });
+
+    const items = LEVELS.concat({ name: 'Volver', back: true });
+    const x0 = 180, top = 200, gap = 64;
+    panel(x0 - 40, top - 20, W - 2 * (x0 - 40), items.length * gap + 30);
+    items.forEach((lv, i) => {
+      const y = top + 30 + i * gap;
+      const active = i === G.levelMenu;
+      const label = lv.back ? lv.name : `${i + 1}. ${lv.name}`;
+      const color = lv.soon ? (active ? '#e8c9b0' : '#b89a90') : active ? '#ffe28a' : '#f3e6e6';
+      text(label, x0 + 20, y, { size: 32, color, weight: active ? 700 : 400 });
+      if (lv.soon) text('PRÓXIMAMENTE', W - x0 + 20, y, { size: 18, align: 'right', color: '#ffb070', weight: 700 });
+      if (active) cursor(x0 - 22, y);
+    });
+
+    if (G.levelMsg > 0) {
+      ctx.globalAlpha = Math.min(1, G.levelMsg / 20);
+      text('¡Este nivel todavía está en obras!', W / 2, 610, { size: 26, align: 'center', color: '#ffb070', weight: 700 });
+      ctx.globalAlpha = 1;
+    }
+    text('↑ ↓  elegir     ESPACIO  jugar     ESC  volver', W / 2, 680, { size: 20, align: 'center', color: 'rgba(255,240,220,0.8)' });
   }
 
   function drawCredits() {
@@ -881,7 +989,7 @@
   function render() {
     ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
     ctx.imageSmoothingEnabled = false;
-    ({ title: drawTitle, credits: drawCredits, play: drawPlay, dialog: drawPlay, cutscene: drawPlay, minigame: drawMinigame, pause: drawPause })[G.scene]();
+    ({ title: drawTitle, levels: drawLevels, credits: drawCredits, play: drawPlay, dialog: drawPlay, cutscene: drawPlay, minigame: drawMinigame, pause: drawPause })[G.scene]();
     if (G.fade.a > 0) {
       ctx.fillStyle = `rgba(0,0,0,${G.fade.a})`;
       ctx.fillRect(0, 0, W, H);
@@ -917,7 +1025,7 @@
   function boot() {
     resize();
     addEventListener('resize', resize);
-    G.world = createWorld('aldea');
+    G.world = createWorld(TITLE_MAP);
     if (location.search.includes('debug')) window.__G = G;
     requestAnimationFrame(frame);
   }
