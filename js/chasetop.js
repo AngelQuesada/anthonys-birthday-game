@@ -88,13 +88,13 @@ Battle.views.top = (() => {
     P(g, O, 4, 8, 14, 4);
     P(g, '#22324f', 5, 9, 12, 2);
     P(g, '#7aa0d0', 6, 9, 3, 1);
-    // descapotable: Kael al volante (pelo naranja visto desde arriba) y el asiento de al lado
+    // descapotable: Anthon al volante (pelo naranja visto desde arriba) y el asiento de al lado
     P(g, '#3a2a20', 5, 12, 12, 9);
     P(g, '#6b4a2a', 12, 14, 4, 5);
     P(g, '#5a3d22', 12, 18, 4, 1);
-    oell(g, '#e0782e', 8, 16, 2.5, 3);
-    P(g, '#b8551e', 7, 18, 3, 1);
-    P(g, '#f3a060', 7, 14, 2, 1);
+    oell(g, '#f0b48c', 8, 16, 2.5, 3); // cabeza calva vista desde arriba
+    P(g, '#d99a70', 7, 18, 3, 1); // nuca
+    P(g, '#f8d0b0', 7, 14, 2, 1);
     P(g, redD, 5, 21, 12, 1);
     // arma montada en el lateral derecho, apuntando hacia delante
     P(g, O, 19, 9, 4, 3);

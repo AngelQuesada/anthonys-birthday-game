@@ -722,24 +722,23 @@ const Art = (() => {
 
   // ---------- interiores ----------
   const I = {
-    floor: '#c68c55', floorD: '#a06a3a', floorL: '#dba26a',
-    wall: '#efdcb4', wallD: '#e3cc9c', wallL: '#fbf0d6',
+    floor: '#e6d8c0', floorD: '#d6c5a9', floorL: '#f0e6d4',
+    wall: '#f6f5f2', wallD: '#e8e6e1', wallL: '#ffffff',
     trim: '#3b2a22', trimL: '#5e4332',
     base: '#8a5a32', baseL: '#b07a48',
     sheet: '#f4efe4', sheetD: '#d9d2c2',
     quilt: '#4f7fbf', quiltD: '#3a5f96', quiltL: '#7aa6dd',
   };
 
-  // Tablones horizontales; cada fila de 4px tiene una junta en un sitio distinto.
+  // Baldosas grandes de color beige oscuro, con alguna mota suelta.
   function floorTile(g, x0, y0, tx, ty) {
     P(g, I.floor, x0, y0, T, T);
-    for (let py = 0; py < T; py += 4) {
-      const r = rng(hash(tx, ty * 4 + py));
-      P(g, I.floorL, x0, y0 + py, T, 1);
-      P(g, I.floorD, x0, y0 + py + 3, T, 1);
-      P(g, I.floorD, x0 + 2 + ((r() * 12) | 0), y0 + py, 1, 3);
-      if (r() < 0.5) P(g, I.floorD, x0 + ((r() * T) | 0), y0 + py + 1 + ((r() * 2) | 0));
-    }
+    const r = rng(hash(tx, ty));
+    for (let i = 0; i < 4; i++) P(g, r() < 0.5 ? I.floorD : I.floorL, x0 + 2 + ((r() * 12) | 0), y0 + 2 + ((r() * 12) | 0));
+    P(g, I.floorL, x0, y0, T, 1);
+    P(g, I.floorL, x0, y0, 1, T);
+    P(g, I.floorD, x0, y0 + T - 1, T, 1);
+    P(g, I.floorD, x0 + T - 1, y0, 1, T);
   }
 
   function wallTile(g, x0, y0, up, down) {
@@ -765,17 +764,19 @@ const Art = (() => {
     for (let x = 3; x < 14; x += 2) { P(g, '#e8d6b0', x0 + x, y0 + 3); P(g, '#e8d6b0', x0 + x, y0 + 13); }
   }
 
-  // Suelo y paredes de una habitación. Leyenda: X borde, W pared, D puerta, cualquier otra cosa es suelo.
-  // Los muebles planos (alfombras, ventanas...) se pintan aquí mismo.
+  // Suelo y paredes de una habitación. Leyenda: X borde, W pared, D puerta, espacio = fuera de la casa (negro),
+  // cualquier otra cosa es suelo. Los muebles planos (alfombras, ventanas...) se pintan aquí mismo.
   function room(tiles, furniture) {
     const h = tiles.length, w = tiles[0].length;
     const { c, g } = mk(w * T, h * T);
     const at = (x, y) => (tiles[y] && tiles[y][x]) || 'X';
+    const open = (x, y) => at(x, y) !== 'X' && at(x, y) !== ' ';
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const ch = tiles[y][x], x0 = x * T, y0 = y * T;
+        if (ch === ' ') continue;
         if (ch === 'X') {
-          trimTile(g, x0, y0, { u: at(x, y - 1) !== 'X', d: at(x, y + 1) !== 'X', l: at(x - 1, y) !== 'X', r: at(x + 1, y) !== 'X' });
+          trimTile(g, x0, y0, { u: open(x, y - 1), d: open(x, y + 1), l: open(x - 1, y), r: open(x + 1, y) });
         } else if (ch === 'W') {
           wallTile(g, x0, y0, at(x, y - 1) === 'W', at(x, y + 1) === 'W');
         } else {
@@ -963,7 +964,9 @@ const Art = (() => {
   }
 
   const bedCache = {};
-  function bed(d, state = 'empty') {
+  // type: 'bed' (la cama clásica de 2x2) o una de BEDS.
+  function bed(d, state = 'empty', type = 'bed') {
+    if (BEDS[type]) return bedOf(type, d, state);
     const key = (d ? d.id : '') + ':' + state;
     if (bedCache[key]) return bedCache[key];
     const { c, g } = mk(32, 40);
@@ -1003,6 +1006,390 @@ const Art = (() => {
     P(g, C.woodL, 3, 34, 26, 1);
     P(g, C.woodD, 3, 37, 26, 1);
     bedCache[key] = c;
+    return c;
+  }
+
+  // Camas vistas desde arriba, de w x h casillas. pillow: lado donde queda la almohada (up | right | down | left).
+  const BEDS = {
+    bigbed: { w: 4, h: 3, pillow: 'right', quilt: '#4f7fbf' },
+    singlebed: { w: 2, h: 3, pillow: 'up', quilt: '#8a5fbf' },
+    kidbed: { w: 2, h: 3, pillow: 'down', quilt: '#e07a3a' },
+  };
+
+  // Gira un canvas para que lo que estaba arriba quede mirando a `dir`.
+  function rotated(src, dir) {
+    if (dir === 'up') return src;
+    const side = dir === 'right' || dir === 'left';
+    const { c, g } = mk(side ? src.height : src.width, side ? src.width : src.height);
+    g.translate(c.width / 2, c.height / 2);
+    g.rotate({ right: Math.PI / 2, down: Math.PI, left: -Math.PI / 2 }[dir]);
+    g.drawImage(src, -src.width / 2, -src.height / 2);
+    return c;
+  }
+
+  function bedOf(type, d, state) {
+    const key = type + ':' + (d ? d.id : '') + ':' + state;
+    if (bedCache[key]) return bedCache[key];
+    const spec = BEDS[type];
+    const side = spec.pillow === 'right' || spec.pillow === 'left';
+    const W = (side ? spec.h : spec.w) * T, H = (side ? spec.w : spec.h) * T;
+    const { c, g } = mk(W, H);
+    const q = spec.quilt, qD = shade(q, -0.25), qL = shade(q, 0.3);
+    // armazón, cabecero y colchón
+    orect(g, C.woodD, 1, 1, W - 2, H - 2);
+    P(g, C.wood, 1, 1, W - 2, 4);
+    P(g, C.woodL, 1, 1, W - 2, 1);
+    P(g, I.sheet, 3, 5, W - 6, H - 8);
+    // almohadas (dos si es de matrimonio)
+    const n = W >= 40 ? 2 : 1;
+    const pw = Math.floor((W - 8 - (n - 1) * 2) / n);
+    const pillows = [];
+    for (let i = 0; i < n; i++) {
+      const px = 4 + i * (pw + 2);
+      orect(g, '#ffffff', px, 7, pw, 6);
+      P(g, I.sheetD, px, 12, pw, 1);
+      pillows.push(Math.round(px + pw / 2));
+    }
+    // quien duerme ocupa la última almohada (en la cama de matrimonio, la del lado sur)
+    const hx = pillows[n - 1] - 8;
+    let top = 16, mound = 0;
+    if (d && state !== 'empty') {
+      const spr = mk(T, 24);
+      drawChar(spr.g, d, 'down', 0);
+      if (state === 'sit') {
+        g.drawImage(spr.c, 0, 0, T, 20, hx, 1, T, 20);
+        top = 19;
+      } else {
+        g.drawImage(spr.c, 0, 0, T, 12, hx, 4, T, 12);
+        P(g, d.skin, hx + 5, 12, 1, 2); P(g, d.skin, hx + 10, 12, 1, 2);
+        P(g, O, hx + 4, 13, 2, 1); P(g, O, hx + 10, 13, 2, 1);
+        top = 15;
+        mound = state === 'sleep1' ? 5 : 4;
+      }
+    }
+    // edredón
+    const bottom = H - 3;
+    P(g, q, 3, top, W - 6, bottom - top);
+    for (let y = top + 4; y < bottom; y += 4) P(g, qD, 3, y, W - 6, 1);
+    if (mound) {
+      oell(g, q, hx + 8, top + 9, 6, mound, qD);
+      ell(g, qL, hx + 6, top + 7, 3, mound - 2.5);
+    }
+    P(g, qD, 3, top, 1, bottom - top);
+    P(g, qD, W - 4, top, 1, bottom - top);
+    P(g, I.sheet, 3, top, W - 6, 2);
+    P(g, I.sheetD, 3, top + 2, W - 6, 1);
+    P(g, C.wood, 1, H - 3, W - 2, 2);
+
+    // girada y con el frente de madera abajo para que tenga algo de volumen
+    const r = rotated(c, spec.pillow);
+    const out = mk(r.width, r.height + 2);
+    out.g.drawImage(r, 0, 0);
+    P(out.g, C.woodD, 1, r.height - 1, r.width - 2, 2);
+    P(out.g, O, 0, r.height + 1, r.width, 1);
+    bedCache[key] = out.c;
+    return out.c;
+  }
+
+  // ---------- muebles de la casa ----------
+  // Mesa con ordenador; el monitor, de perfil, mira a la derecha.
+  function makePcDesk() {
+    const { c, g } = mk(T, 36);
+    ell(g, C.shadow, 8, 34.5, 7, 1.5);
+    orect(g, C.woodD, 2, 29, 2, 5);
+    orect(g, C.woodD, 12, 29, 2, 5);
+    orect(g, C.wood, 1, 5, 14, 24);
+    P(g, C.woodL, 1, 5, 14, 1);
+    P(g, C.woodD, 1, 27, 14, 2);
+    // monitor de lado y su pie
+    orect(g, '#3a3a44', 3, 19, 5, 2);
+    orect(g, '#2a2a30', 4, 2, 2, 17);
+    P(g, '#46464d', 4, 2, 1, 17);
+    P(g, '#7cc3f0', 6, 3, 1, 15);
+    P(g, '#bfe4f4', 6, 5, 1, 3);
+    // teclado y ratón
+    orect(g, '#d9d4c8', 9, 8, 3, 11);
+    for (let y = 9; y < 19; y += 2) P(g, '#a4aab1', 10, y);
+    oell(g, '#d9d4c8', 12.5, 23, 1.2, 1.6);
+    return c;
+  }
+
+  // Silla de escritorio mirando a la izquierda (el respaldo queda a la derecha).
+  function makeOfficeChair() {
+    const { c, g } = mk(T, 20);
+    ell(g, C.shadow, 8, 18.5, 6, 1.5);
+    P(g, '#1e1e22', 7, 13, 2, 4);
+    P(g, '#1e1e22', 3, 17, 10, 1);
+    orect(g, '#3a3a44', 3, 7, 8, 7);
+    P(g, '#4a4a55', 3, 7, 8, 1);
+    orect(g, '#2a2a30', 11, 1, 3, 13);
+    P(g, '#4a4a55', 11, 1, 3, 1);
+    return c;
+  }
+
+  // Mesa alargada (3 casillas, tan larga como la cama de matrimonio) con lámpara y libros.
+  function makeSideTable() {
+    const { c, g } = mk(T, 52);
+    ell(g, C.shadow, 8, 50.5, 6, 1.5);
+    orect(g, C.woodD, 3, 42, 10, 7);
+    P(g, '#ffd35a', 7, 45, 2, 1);
+    orect(g, C.wood, 2, 8, 12, 35);
+    P(g, C.woodL, 2, 8, 12, 1);
+    // lámpara
+    oell(g, '#7d552c', 8, 13, 3, 1.5);
+    P(g, O, 7, 6, 2, 7);
+    orect(g, '#f2e6c8', 5, 1, 6, 5);
+    P(g, '#fffaf0', 6, 1, 2, 4);
+    // pila de libros
+    [['#c23b3b', 22], ['#3b6fc4', 26], ['#e8b83a', 30]].forEach(([col, y]) => {
+      orect(g, col, 4, y, 8, 3);
+      P(g, '#fffaf0', 11, y, 1, 3);
+    });
+    return c;
+  }
+
+  // Armario empotrado de w casillas, con puertas correderas; sube por la pared de detrás.
+  function makeWardrobe(w) {
+    const W = w * T;
+    const { c, g } = mk(W, 36);
+    ell(g, C.shadow, W / 2, 34.5, W / 2 - 1, 1.5);
+    orect(g, '#f4f1ea', 1, 1, W - 2, 32);
+    P(g, '#ffffff', 1, 1, W - 2, 2);
+    for (let x = 1; x < W - 2; x += 16) {
+      P(g, '#d8d2c6', x, 3, 1, 30);
+      P(g, '#e9e4da', x + 1, 3, 14, 1);
+      P(g, '#8a8a96', x + (((x - 1) / 16) % 2 ? 2 : 13), 15, 1, 6);
+    }
+    P(g, '#d8d2c6', 1, 31, W - 2, 2);
+    return c;
+  }
+
+  // Nevera vista desde arriba, con la puerta (y los tiradores) mirando a la derecha.
+  function makeFridge() {
+    const { c, g } = mk(T, 44);
+    ell(g, C.shadow, 8, 42.5, 7, 1.5);
+    orect(g, '#e9edf0', 2, 1, 12, 29);
+    P(g, '#ffffff', 2, 1, 12, 1);
+    orect(g, '#cfd5da', 2, 30, 12, 11);
+    P(g, '#b8c0c6', 2, 39, 12, 2);
+    P(g, '#a4aab1', 11, 2, 1, 39);
+    P(g, '#5a6066', 13, 4, 1, 8);
+    P(g, '#5a6066', 13, 16, 1, 10);
+    P(g, '#f2e27a', 4, 32, 4, 4);
+    P(g, '#e04a5a', 5, 33, 2, 1);
+    return c;
+  }
+
+  // Encimera de cocina con fregadero y vitrocerámica, de w casillas.
+  function makeKitchen(w) {
+    const W = w * T;
+    const { c, g } = mk(W, 24);
+    orect(g, '#f2efe6', 1, 9, W - 2, 13);
+    for (let x = 1; x < W - 2; x += 16) {
+      P(g, '#cfc8b8', x, 10, 1, 10);
+      P(g, '#8a8a96', x + 7, 12, 3, 1);
+    }
+    P(g, '#cfc8b8', 1, 20, W - 2, 2);
+    orect(g, '#c9c4bc', 1, 1, W - 2, 8);
+    P(g, '#ddd8d0', 1, 1, W - 2, 1);
+    P(g, '#a49e96', 1, 8, W - 2, 1);
+    const sx = Math.round(W * 0.22), vx = Math.round(W * 0.55);
+    orect(g, '#a4aab1', sx, 2, 13, 5);
+    P(g, '#7d838b', sx + 1, 3, 11, 3);
+    P(g, '#5a6066', sx + 5, 0, 2, 3);
+    orect(g, '#2a2a30', vx, 2, 20, 5);
+    ell(g, '#4a4a55', vx + 5, 4.5, 3, 2);
+    ell(g, '#4a4a55', vx + 14, 4.5, 3, 2);
+    oell(g, '#f4efe4', W - 10, 4.5, 4, 2);
+    P(g, '#e04a5a', W - 13, 3, 2, 2); P(g, '#f2c14e', W - 10, 2, 2, 2); P(g, '#5cc96a', W - 8, 3, 2, 2);
+    return c;
+  }
+
+  // Encimera americana (barra) de w casillas: frente de madera hacia el salón.
+  function makeBar(w) {
+    const W = w * T;
+    const { c, g } = mk(W, 22);
+    ell(g, C.shadow, W / 2, 20.5, W / 2 - 1, 1.5);
+    orect(g, C.woodD, 1, 8, W - 2, 11);
+    for (let x = 5; x < W - 2; x += 6) P(g, '#6a4524', x, 9, 1, 10);
+    orect(g, '#e3ddd2', 0, 1, W, 7);
+    P(g, '#f4efe6', 0, 1, W, 1);
+    P(g, '#b8b0a0', 0, 7, W, 1);
+    // una lista de la compra y un vaso
+    P(g, '#fffaf0', 12, 2, 6, 5);
+    P(g, '#b8b0a0', 13, 3, 4, 1); P(g, '#e04a5a', 13, 5, 4, 1);
+    orect(g, '#e8f6ff', W - 20, 2, 3, 4);
+    return c;
+  }
+
+  // Sofá rinconero oscuro en dos piezas que encajan: el tramo de arriba (con la esquina) y el chaise longue.
+  const SOFA = { base: '#3d4150', dark: '#2b2e39', light: '#525869', cushion: '#474c5c' };
+  function makeSofa() {
+    const W = 96, H = 32;
+    const { c, g } = mk(W, H);
+    P(g, SOFA.base, 11, 11, W - 22, H - 11);
+    P(g, O, 32, H - 1, W - 43, 1);
+    P(g, SOFA.dark, 32, H - 3, W - 43, 2);
+    orect(g, SOFA.dark, 1, 1, W - 2, 10);
+    orect(g, SOFA.dark, 1, 1, 10, H);
+    P(g, SOFA.light, 2, 1, W - 4, 1);
+    orect(g, SOFA.cushion, 12, 12, 19, H - 12);
+    [33, 51, 69].forEach(x => { orect(g, SOFA.cushion, x, 12, 16, H - 16); P(g, SOFA.light, x, 12, 16, 1); });
+    P(g, SOFA.light, 12, 12, 19, 1);
+    orect(g, SOFA.dark, W - 11, 3, 10, H - 4);
+    P(g, SOFA.light, W - 11, 3, 10, 1);
+    // cojín de color
+    orect(g, '#e8b83a', 13, 4, 7, 6);
+    P(g, '#f2d06a', 14, 4, 5, 1);
+    return c;
+  }
+
+  function makeChaise() {
+    const W = 32, H = 80;
+    const { c, g } = mk(W, H);
+    P(g, SOFA.base, 11, 0, 20, H - 2);
+    P(g, O, 31, 0, 1, H);
+    orect(g, SOFA.dark, 1, 0, 10, H - 1);
+    orect(g, SOFA.cushion, 12, 1, 18, 32);
+    orect(g, SOFA.cushion, 12, 35, 18, 32);
+    P(g, SOFA.light, 12, 35, 18, 1);
+    orect(g, SOFA.dark, 1, 69, 30, 10);
+    P(g, SOFA.light, 1, 69, 30, 1);
+    return c;
+  }
+
+  // Mesa baja alargada con el mando de la tele.
+  function makeCoffeeTable() {
+    const { c, g } = mk(T, 50);
+    ell(g, C.shadow, 8, 48.5, 7, 1.5);
+    orect(g, C.woodD, 2, 40, 2, 6);
+    orect(g, C.woodD, 12, 40, 2, 6);
+    orect(g, C.wood, 1, 2, 14, 39);
+    P(g, C.woodL, 1, 2, 14, 1);
+    P(g, C.woodD, 1, 39, 14, 2);
+    // mando
+    orect(g, '#2a2a30', 6, 12, 4, 11);
+    P(g, '#e04a5a', 7, 13, 2, 1);
+    P(g, '#8a8a96', 7, 16); P(g, '#8a8a96', 8, 18); P(g, '#8a8a96', 7, 20);
+    // revista
+    orect(g, '#f2efe6', 4, 28, 8, 7);
+    P(g, '#4f9fe0', 5, 29, 6, 2);
+    return c;
+  }
+
+  // Mueble bajo con la tele encima, de perfil y mirando a la izquierda.
+  function makeTvStand() {
+    const { c, g } = mk(T, 60);
+    ell(g, C.shadow, 8, 58.5, 7, 1.5);
+    orect(g, '#4a3426', 3, 50, 12, 7);
+    orect(g, '#6b4d3a', 3, 13, 12, 37);
+    P(g, '#80604a', 3, 13, 12, 1);
+    orect(g, '#2a2a30', 6, 30, 6, 3);
+    orect(g, '#1e1e22', 8, 1, 3, 31);
+    P(g, '#33475e', 7, 2, 1, 29);
+    P(g, '#6d88a6', 7, 5, 1, 4);
+    return c;
+  }
+
+  // Váter con la cisterna contra la pared de arriba.
+  function makeToilet() {
+    const { c, g } = mk(T, 22);
+    ell(g, C.shadow, 8, 20.5, 6, 1.5);
+    orect(g, '#f4f6f8', 3, 1, 10, 6);
+    P(g, '#ffffff', 3, 1, 10, 1);
+    P(g, '#a4aab1', 7, 2, 2, 1);
+    oell(g, '#f4f6f8', 8, 13, 5, 6);
+    ell(g, '#dfe6ea', 8, 13, 3.5, 4.5);
+    ell(g, '#9fd0ea', 8, 14, 2, 2.5);
+    return c;
+  }
+
+  // Lavabo contra la pared de abajo (el grifo queda en ese lado).
+  function makeSink() {
+    const { c, g } = mk(T, 20);
+    orect(g, '#f4f6f8', 1, 3, 14, 13);
+    P(g, '#ffffff', 1, 3, 14, 1);
+    oell(g, '#dfe6ea', 8, 9, 4.5, 3.5, '#b8c0c6');
+    ell(g, '#9fd0ea', 8, 9, 1, 1);
+    P(g, '#7d838b', 7, 13, 2, 2);
+    orect(g, '#f48ab0', 12, 5, 2, 3);
+    orect(g, '#cfd5da', 1, 16, 14, 3);
+    return c;
+  }
+
+  function makeBathtub() {
+    const { c, g } = mk(32, 50);
+    orect(g, '#f4f6f8', 1, 2, 30, 44);
+    P(g, '#ffffff', 1, 2, 30, 1);
+    P(g, '#dfe6ea', 4, 5, 24, 38);
+    P(g, '#9fd0ea', 5, 9, 22, 33);
+    P(g, '#c9e8f7', 8, 14, 6, 1); P(g, '#c9e8f7', 15, 24, 8, 1); P(g, '#c9e8f7', 9, 33, 5, 1);
+    P(g, '#a4aab1', 14, 3, 4, 3);
+    // patito de goma
+    oell(g, '#f2c14e', 19, 30, 2.5, 2);
+    ell(g, '#f2c14e', 21, 27, 1.5, 1.5);
+    P(g, '#e07a3a', 22, 27);
+    orect(g, '#cfd5da', 1, 46, 30, 3);
+    return c;
+  }
+
+  // Mesa con montones de ropa doblada.
+  function makeClothesTable() {
+    const { c, g } = mk(T, 36);
+    ell(g, C.shadow, 8, 34.5, 7, 1.5);
+    orect(g, C.woodD, 2, 29, 2, 5);
+    orect(g, C.woodD, 12, 29, 2, 5);
+    orect(g, C.wood, 1, 5, 14, 24);
+    P(g, C.woodL, 1, 5, 14, 1);
+    P(g, C.woodD, 1, 27, 14, 2);
+    [[1, '#4f9fe0'], [8, '#e04a5a'], [15, '#5cc96a']].forEach(([y, col]) => {
+      orect(g, col, 3, y, 10, 6);
+      P(g, shade(col, 0.3), 3, y, 10, 1);
+      P(g, shade(col, -0.3), 3, y + 3, 10, 1);
+    });
+    P(g, '#f2efe6', 9, 23, 4, 2);
+    return c;
+  }
+
+  // Cristalera de la terraza en una pared de arriba (ocupa las dos filas de pared).
+  function makeTerrace() {
+    const { c, g } = mk(64, 32);
+    P(g, O, 1, 1, 62, 31);
+    P(g, '#e8e4dc', 2, 2, 60, 30);
+    const sky = ['#8fd0f3', '#9cd6f4', '#abdcf5', '#bfe4f4', '#d2ecf6', '#e2f3f8'];
+    [[4, 26], [34, 26]].forEach(([x, w]) => {
+      for (let y = 0; y < 14; y++) P(g, sky[Math.min(5, y >> 1)], x, 4 + y, w, 1);
+      P(g, '#cfc6b4', x, 18, w, 10);
+      P(g, '#5a5f66', x, 15, w, 1);
+      for (let bx = x + 1; bx < x + w; bx += 3) P(g, '#5a5f66', bx, 15, 1, 6);
+      for (let i = 0; i < 6; i++) P(g, 'rgba(255,255,255,0.55)', x + 4 + i, 6 + i * 2, 1, 2);
+    });
+    P(g, '#8a8a96', 29, 14, 1, 5);
+    P(g, '#8a8a96', 34, 14, 1, 5);
+    P(g, '#a4aab1', 2, 29, 60, 3);
+    return c;
+  }
+
+  // Cristal (ventana o terraza) en una pared de abajo, de w casillas.
+  function makeGlassStrip(w) {
+    const W = w * T;
+    const { c, g } = mk(W, T);
+    P(g, O, 1, 4, W - 2, 9);
+    P(g, '#e8e4dc', 2, 5, W - 4, 7);
+    P(g, '#a9dcf3', 3, 6, W - 6, 5);
+    for (let x = 6; x < W - 6; x += 10) P(g, '#e6f6fd', x, 7, 3, 1);
+    for (let x = T; x < W; x += T) P(g, '#e8e4dc', x, 6, 1, 5);
+    return c;
+  }
+
+  // Luz que entra por una cristalera. dir: 'down' si entra por arriba, 'up' si entra por abajo.
+  function makeGlow(w, h, dir) {
+    const W = w * T, H = h * T;
+    const { c, g } = mk(W, H);
+    for (let i = 0; i < H; i++) {
+      const y = dir === 'down' ? i : H - 1 - i;
+      P(g, `rgba(255,236,170,${(0.24 * (1 - i / H)).toFixed(3)})`, 3 + Math.floor(i * 0.3), y, W - 10, 1);
+    }
     return c;
   }
 
@@ -1190,8 +1577,29 @@ const Art = (() => {
   }
 
   // Muebles: tamaño en casillas. Los planos no bloquean el paso y se pintan en el suelo.
+  // Los `stretch` no tienen tamaño fijo: se les da `w` y `h` en el mapa (por defecto 1).
   const FURNITURE = {
     bed: { w: 2, h: 2, make: () => bed(null) },
+    ...Object.fromEntries(Object.entries(BEDS).map(([k, b]) => [k, { w: b.w, h: b.h, make: () => bed(null, 'empty', k) }])),
+    pcdesk: { w: 1, h: 2, make: makePcDesk },
+    officechair: { w: 1, h: 1, make: makeOfficeChair },
+    sidetable: { w: 1, h: 3, make: makeSideTable },
+    wardrobe: { stretch: true, make: makeWardrobe },
+    fridge: { w: 1, h: 2, make: makeFridge },
+    kitchen: { stretch: true, make: makeKitchen },
+    bar: { stretch: true, make: makeBar },
+    sofa: { w: 6, h: 2, make: makeSofa },
+    chaise: { w: 2, h: 5, make: makeChaise },
+    coffeetable: { w: 1, h: 3, make: makeCoffeeTable },
+    tvstand: { w: 1, h: 3, make: makeTvStand },
+    toilet: { w: 1, h: 1, make: makeToilet },
+    sink: { w: 1, h: 1, make: makeSink },
+    bathtub: { w: 2, h: 3, make: makeBathtub },
+    clothestable: { w: 1, h: 2, make: makeClothesTable },
+    terrace: { w: 4, h: 2, flat: true, make: makeTerrace },
+    glass: { stretch: true, flat: true, make: makeGlassStrip },
+    lightdown: { stretch: true, flat: true, make: (w, h) => makeGlow(w, h, 'down') },
+    lightup: { stretch: true, flat: true, make: (w, h) => makeGlow(w, h, 'up') },
     nightstand: { w: 1, h: 1, make: makeNightstand },
     desk: { w: 2, h: 1, make: makeDesk },
     chair: { w: 1, h: 1, make: makeChair },
@@ -1219,11 +1627,13 @@ const Art = (() => {
   };
   const furnitureImgs = {};
 
-  function furniture(type) {
+  function furniture(type, w, h) {
     const f = FURNITURE[type];
     if (!f) throw new Error(`Mueble desconocido: ${type}`);
-    if (!furnitureImgs[type]) furnitureImgs[type] = f.make();
-    return { w: f.w, h: f.h, flat: !!f.flat, img: furnitureImgs[type] };
+    const fw = f.stretch ? w || 1 : f.w, fh = f.stretch ? h || 1 : f.h;
+    const key = f.stretch ? `${type}:${fw}x${fh}` : type;
+    if (!furnitureImgs[key]) furnitureImgs[key] = f.make(fw, fh);
+    return { w: fw, h: fh, flat: !!f.flat, img: furnitureImgs[key] };
   }
 
   const treeImgs = [];
@@ -1287,12 +1697,111 @@ const Art = (() => {
     });
     furnitureList.filter(f => !f.flat).forEach(f => {
       const base = (f.y + f.h) * T;
-      list.push({ img: f.img, dx: f.x * T, dy: base - f.img.height, base, type: f.type });
+      list.push({ img: f.img, dx: f.x * T, dy: base - f.img.height, base, furn: f });
     });
     return list;
   }
 
   // ---------- personajes (16x24) ----------
+  // Cabeza calva de Anthon, configurable con d.look:
+  //   beard: full | goatee | stubble | none      glasses: aviator | round | thick | sun | none
+  //   eyes: dot | big | happy                    mouth: smile | none          earring, blush: bool
+  function drawBald(g, d, dir) {
+    const look = d.look || {};
+    const skin = d.skin, skinD = shade(skin, -0.2);
+    const bc = d.beardColor || '#6b3f22', bcD = shade(bc, -0.3);
+    const beard = look.beard || 'none', glasses = look.glasses || 'none';
+    const eyes = look.eyes || 'dot', mouth = look.mouth || 'none';
+    const gold = '#d4b05a', dark = '#3a2a20', mc = '#8a3a3a', stub = 'rgba(80,50,30,0.35)';
+    const green = d.eyes, fc = look.frame || gold;
+    // ojo con iris verde, brillo blanco arriba a la izquierda y pupila oscura
+    const eye = (x, y, h) => { P(g, green, x, y, 2, h); P(g, O, x + 1, y + (h > 2 ? 1 : 1), 1, h - 1); P(g, '#ffffff', x, y); };
+    const frame = glasses === 'thick' || glasses === 'sun' ? dark : gold;
+    P(g, shade(skin, 0.25), dir === 'left' ? 6 : 5, 4, 3, 1);
+    if (look.tuft && !d.hat) { P(g, O, 7, 1, 3, 1); P(g, O, 8, 0); P(g, bc, 8, 1); P(g, O, 6, 2, 1, 1); }
+    if (dir === 'up') {
+      if (d.hat) { orect(g, d.hat, 3, 1, 10, 4); P(g, shade(d.hat, -0.3), 4, 5, 8, 1); }
+      return;
+    }
+
+    if (dir === 'down') {
+      P(g, bc, 4, 5, 3, 1); P(g, bc, 9, 5, 3, 1); // cejas
+      // ojos
+      if (glasses === 'sun') {
+        P(g, dark, 3, 6, 10, 1); P(g, dark, 3, 7, 4, 2); P(g, dark, 9, 7, 4, 2);
+        P(g, '#5a6a8a', 4, 7, 2, 1); P(g, '#5a6a8a', 10, 7, 2, 1);
+      } else {
+        const eh = glasses === 'none' ? 3 : 2; // alto del ojo: más grande si no hay gafas
+        if (eyes === 'sparkle') { eye(5, 7, eh); eye(9, 7, eh); }
+        else if (eyes === 'wink') { eye(5, 7, eh); P(g, O, 9, 8, 3, 1); P(g, O, 12, 7); }
+        else if (eyes === 'big') { eye(5, 7, 2); eye(9, 7, 2); }
+        else if (eyes === 'happy') { P(g, O, 4, 8); P(g, O, 5, 7, 2, 1); P(g, O, 7, 8); P(g, O, 9, 8); P(g, O, 10, 7, 2, 1); P(g, O, 12, 8); }
+        else { P(g, O, 5, 7, 1, 2); P(g, O, 10, 7, 1, 2); }
+        if (glasses === 'aviator') {
+          P(g, gold, 3, 6, 5, 1); P(g, gold, 8, 6, 5, 1); P(g, gold, 3, 7, 1, 3); P(g, gold, 7, 7, 2, 2); P(g, gold, 12, 7, 1, 3);
+        } else if (glasses === 'round') {
+          if (look.tint) { P(g, look.tint, 4, 7, 3, 2); P(g, look.tint, 9, 7, 3, 2); eye(5, 7, 2); eye(9, 7, 2); }
+          P(g, fc, 4, 6, 3, 1); P(g, fc, 9, 6, 3, 1); P(g, fc, 3, 7, 1, 2); P(g, fc, 7, 7, 2, 1); P(g, fc, 12, 7, 1, 2);
+          P(g, fc, 4, 9, 3, 1); P(g, fc, 9, 9, 3, 1); P(g, fc, 7, 7, 1, 2); P(g, fc, 8, 7, 1, 2);
+        } else if (glasses === 'thick') {
+          P(g, dark, 3, 6, 10, 1); P(g, dark, 3, 9, 4, 1); P(g, dark, 9, 9, 4, 1);
+          P(g, dark, 3, 7, 1, 2); P(g, dark, 6, 7, 1, 2); P(g, dark, 9, 7, 1, 2); P(g, dark, 12, 7, 1, 2); P(g, dark, 7, 7, 2, 1);
+        }
+      }
+      P(g, skinD, 7, 9, 2, 1); // nariz
+      if (beard === 'full') {
+        P(g, bc, 3, 9, 1, 3); P(g, bc, 12, 9, 1, 3); P(g, bc, 4, 10, 2, 2); P(g, bc, 10, 10, 2, 2);
+        P(g, bc, 6, 10, 4, 2); P(g, bc, 4, 12, 8, 1); P(g, bcD, 5, 13, 6, 1);
+        if (mouth === 'smile') P(g, '#e8a0a0', 7, 11, 2, 1);
+      } else if (beard === 'goatee') {
+        P(g, bc, 6, 10, 4, 1); P(g, bc, 6, 11, 4, 2); P(g, bcD, 7, 13, 2, 1);
+        if (mouth === 'smile') { P(g, mc, 6, 11); P(g, mc, 9, 11); }
+      } else {
+        if (beard === 'stubble') { P(g, stub, 3, 9, 10, 3); P(g, stub, 4, 12, 8, 1); }
+        if (mouth === 'smile') { P(g, mc, 6, 10); P(g, mc, 9, 10); P(g, mc, 7, 11, 2, 1); }
+        else if (mouth === 'tiny') P(g, mc, 7, 11, 2, 1);
+        else if (mouth === 'open') { P(g, mc, 7, 10, 2, 2); P(g, '#ff8a8a', 7, 11, 2, 1); }
+        else if (mouth === 'o') P(g, mc, 7, 10, 2, 2);
+      }
+      if (d.hat) {
+        orect(g, d.hat, 3, 1, 10, 4); P(g, shade(d.hat, 0.3), 5, 1, 3, 1);
+        P(g, O, 2, 6, 12, 1); P(g, shade(d.hat, -0.3), 2, 5, 12, 1);
+      }
+    } else {
+      P(g, bc, 3, 5, 3, 1);
+      P(g, skinD, 10, 8, 2, 2); // oreja
+      if (look.earring) P(g, gold, 10, 10);
+      if (glasses === 'sun') { P(g, dark, 3, 6, 8, 1); P(g, dark, 3, 7, 4, 2); P(g, '#5a6a8a', 4, 7, 2, 1); }
+      else {
+        if (eyes === 'sparkle' || eyes === 'wink') { eye(4, 7, glasses === 'none' ? 3 : 2); }
+        else if (eyes === 'big') eye(4, 7, 2);
+        else if (eyes === 'happy') { P(g, O, 4, 8); P(g, O, 5, 7, 2, 1); }
+        else P(g, O, 4, 7, 1, 2);
+        if (glasses !== 'none') {
+          const c = frame;
+          P(g, c, 3, 6, 4, 1); P(g, c, 3, 7, 1, 3); P(g, c, 6, 7, 1, 2); P(g, c, 7, 6, 4, 1);
+          if (glasses === 'thick') P(g, c, 3, 9, 4, 1);
+        }
+      }
+      if (beard === 'full') { P(g, bc, 3, 10, 7, 2); P(g, bc, 6, 8, 4, 2); P(g, bcD, 4, 12, 5, 1); }
+      else if (beard === 'goatee') { P(g, bc, 3, 10, 3, 2); P(g, bcD, 4, 12, 3, 1); }
+      else {
+        if (beard === 'stubble') P(g, stub, 3, 9, 7, 3);
+        if (mouth === 'smile') { P(g, mc, 3, 10); P(g, mc, 4, 11, 3, 1); }
+        else if (mouth === 'tiny') P(g, mc, 3, 11, 2, 1);
+        else if (mouth === 'open' || mouth === 'o') { P(g, mc, 3, 10, 2, 2); }
+      }
+    }
+  }
+
+  // Cabeza calva: igual de cuadrada que las demás pero con la parte de arriba algo más redondeada.
+  // Contorno del tono de la piel (no negro) para que no se lea como pelo.
+  function baldHead(g, skin) {
+    const o = shade(skin, -0.45);
+    P(g, o, 5, 2, 6, 1); P(g, o, 3, 3, 10, 1); P(g, o, 2, 4, 12, 8); P(g, o, 3, 12, 10, 1);
+    P(g, skin, 5, 3, 6, 1); P(g, skin, 3, 4, 10, 8);
+  }
+
   function drawChar(g, d, dir, f) {
     const skin = d.skin, skinD = shade(skin, -0.2);
     const hair = d.hair, hairL = shade(hair, 0.3), hairD = shade(hair, -0.3);
@@ -1300,6 +1809,7 @@ const Art = (() => {
     const pants = d.pants, pantsD = shade(pants, -0.3);
     const shoe = '#3b2a20', blush = '#f0a0a0';
     const style = d.hairStyle;
+    const bald = style === 'bald';
 
     ell(g, 'rgba(0,0,0,0.25)', 8, 22, 5, 1.6);
 
@@ -1322,9 +1832,11 @@ const Art = (() => {
       orect(g, shirt, 4, 12, 8, 6);
       P(g, shirtD, 4, 16, 8, 1);
       if (dir === 'down') P(g, skin, 7, 12, 2, 1);
-      orect(g, skin, 3, 3, 10, 9);
+      bald ? baldHead(g, skin) : orect(g, skin, 3, 3, 10, 9);
 
-      if (dir === 'down') {
+      if (dir === 'down' && bald) {
+        drawBald(g, d, 'down');
+      } else if (dir === 'down') {
         if (style === 'old') {
           const hairS = shade(hair, -0.15);
           P(g, shade(skin, 0.2), 6, 4, 3, 1);
@@ -1353,6 +1865,8 @@ const Art = (() => {
           P(g, shade(d.hat, -0.3), 2, 5, 12, 1);
           P(g, '#ffffff', 7, 2, 2, 1);
         }
+      } else if (bald) {
+        drawBald(g, d, 'up');
       } else {
         if (style === 'old') {
           P(g, shade(skin, 0.2), 6, 4, 3, 1);
@@ -1387,8 +1901,10 @@ const Art = (() => {
     const ax = f === 1 ? 5 : f === 2 ? 9 : 7;
     orect(g, shade(shirt, -0.12), ax, 13, 2, 4);
     P(g, skin, ax, 16, 2, 1);
-    orect(g, skin, 3, 3, 10, 9);
-    if (style === 'old') {
+    bald ? baldHead(g, skin) : orect(g, skin, 3, 3, 10, 9);
+    if (bald) {
+      drawBald(g, d, 'left');
+    } else if (style === 'old') {
       P(g, shade(skin, 0.2), 5, 4, 3, 1);
       P(g, hair, 9, 6, 4, 4);
       P(g, shade(hair, -0.15), 9, 9, 4, 1);

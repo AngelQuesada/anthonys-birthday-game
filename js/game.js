@@ -4,10 +4,10 @@
   const W = 960, H = 720;           // resolución lógica de la interfaz
   const VIEW_W = 320, VIEW_H = 240; // resolución del mundo (x3)
   const T = Art.T;
-  const FONT = '"Pixelify Sans", "Trebuchet MS", sans-serif';
-  const TEXT_FONT = `28px ${FONT}`;
+  const FONT = '"Nunito", "Segoe UI", sans-serif';
+  const TEXT_FONT = `700 28px ${FONT}`;
   const TEXT_SPEED = 0.7; // caracteres por frame
-  const SOLID = new Set(['T', 'b', 'r', 'f', 's', '~', 'X', 'W', 'h', 'g', 'n', 'P', 'w']);
+  const SOLID = new Set(['T', 'b', 'r', 'f', 's', '~', 'X', 'W', 'h', 'g', 'n', 'P', 'w', ' ']);
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
@@ -61,6 +61,7 @@
     visited: new Set(),
     flags: new Set(), // cinemáticas de `triggers` ya vistas
     banner: 0,
+    greeted: new Set(), // invitados (GUESTS) con los que ya se ha hablado
     creditsY: H,
     fade: { a: 1, target: 0, cb: null },
     leaves: Array.from({ length: 18 }, () => newLeaf(true)),
@@ -95,7 +96,7 @@
       for (let y = hs.y; y < hs.y + hs.h; y++) for (let x = hs.x; x < hs.x + hs.w; x++) solid[y][x] = true;
       doors[doorTile(hs).join(',')] = hs;
     });
-    const furniture = (def.furniture || []).map(f => ({ ...f, ...Art.furniture(f.type) }));
+    const furniture = (def.furniture || []).map(f => ({ ...f, ...Art.furniture(f.type, f.w, f.h) }));
     furniture.forEach(f => {
       if (f.flat) return;
       for (let y = f.y; y < f.y + f.h; y++) for (let x = f.x; x < f.x + f.w; x++) solid[y][x] = true;
@@ -103,7 +104,8 @@
     const room = def.interior ? Art.room(def.tiles, furniture) : null;
     return {
       id, def, w, h, solid, doors,
-      bed: furniture.find(f => f.type === 'bed'),
+      // la cama de las cinemáticas: la marcada con `sleep: true` o, si no hay, la primera de tipo 'bed'
+      bed: furniture.find(f => f.sleep) || furniture.find(f => f.type === 'bed'),
       ground: room ? [room, room, room] : [0, 1, 2].map(f => Art.ground(def.tiles, f, furniture)),
       statics: Art.buildStatics(def, furniture),
       npcs: (def.npcs || []).map(n => makeEntity(n.char, n.x, n.y, n.dir, n)),
@@ -271,9 +273,11 @@
     if ('getUp' in s) {
       const p = G.player, b = G.world.bed;
       setPose(null);
-      p.fromX = b.x + b.w - 1; p.fromY = b.y + b.h - 1;
+      // salta desde la casilla de la cama más cercana al destino
       p.x = s.getUp.x; p.y = s.getUp.y;
-      p.dir = p.x > p.fromX ? 'right' : 'left';
+      p.fromX = Math.max(b.x, Math.min(b.x + b.w - 1, p.x));
+      p.fromY = Math.max(b.y, Math.min(b.y + b.h - 1, p.y));
+      p.dir = p.x !== p.fromX ? (p.x > p.fromX ? 'right' : 'left') : p.y > p.fromY ? 'down' : 'up';
       p.moving = true;
       p.moveT = 0;
       p.walkSpeed = p.speed;
@@ -343,7 +347,7 @@
       let i = (Math.random() * talks.length) | 0;
       if (talks.length > 1 && i === npc.lastTalk) i = (i + 1) % talks.length;
       npc.lastTalk = i;
-      startDialog(talks[i], npc);
+      startDialog(talks[i], npc, true, greetGuest(npc));
       return;
     }
     const sign = (w.def.signs || {})[`${tx},${ty}`];
@@ -379,16 +383,17 @@
   function prepLine() {
     const d = G.dialog;
     const line = d.lines[d.i];
-    const ch = line.who ? CHARACTERS[line.who] : null;
+    const who = line.who || PLAYER_CHAR; // sin personaje explícito (carteles, objetos...) habla el protagonista
+    const ch = CHARACTERS[who];
     d.ch = ch;
-    d.side = !ch ? 'none' : ch.id === PLAYER_CHAR ? 'right' : 'left';
+    d.side = 'right'; // el retrato va siempre a la derecha, hable quien hable
     d.mood = line.mood || 'normal';
-    d.wrapped = wrap(line.text, d.side === 'none' ? 840 : 610);
+    d.wrapped = wrap(line.text, 610);
     d.total = d.wrapped.reduce((n, l) => n + l.length, 0);
     d.shown = 0;
     d.lastBlip = 0;
-    if (line.who !== d.speaker) d.anim = 0;
-    d.speaker = line.who;
+    if (who !== d.speaker) d.anim = 0;
+    d.speaker = who;
   }
 
   function updateDialog() {
@@ -599,7 +604,7 @@
       if (x > VIEW_W || y > VIEW_H || x + o.img.width < 0 || y + o.img.height < 0) return;
       if (o.crop) return wctx.drawImage(o.img, 0, 0, o.img.width, o.crop, x, y, o.img.width, o.crop);
       const img = o.frames ? o.frames[Math.floor((G.t + o.dx) / 24) % o.frames.length] : o.img;
-      wctx.drawImage(o.type === 'bed' && G.bedPose ? bedImage() : img, x, y);
+      wctx.drawImage(o.furn && o.furn === w.bed && G.bedPose ? bedImage() : img, x, y);
     });
     (w.def.decor || []).forEach(dc => drawDecor(dc, camX, camY, true));
   }
@@ -651,7 +656,7 @@
 
   function bedImage() {
     const pose = G.bedPose === 'sleep' ? `sleep${Math.floor(G.t / 50) % 2}` : G.bedPose;
-    return Art.bed(G.player.ch, pose);
+    return Art.bed(G.player.ch, pose, G.world.bed.type);
   }
 
   // Los mapas más pequeños que la pantalla quedan centrados.
@@ -897,6 +902,16 @@
     }
   }
 
+  // Contador de invitados que faltan por saludar (arriba a la derecha).
+  function drawGuestCounter() {
+    const left = GUESTS.length - G.greeted.size;
+    const label = left > 0 ? 'Guests left to greet: ' + left : 'All guests greeted!';
+    ctx.font = `700 26px ${FONT}`;
+    const w = Math.ceil(ctx.measureText(label).width) + 44;
+    panel(W - 24 - w, 24, w, 56, true);
+    text(label, W - 24 - w / 2, 52, { size: 26, align: 'center', color: left > 0 ? '#ffe28a' : '#9bff9b', weight: 700 });
+  }
+
   function drawPlay() {
     const [cx, cy] = camera();
     renderWorld(cx, cy);
@@ -909,28 +924,60 @@
       text(G.world.def.name, 174, 60, { size: 30, align: 'center', color: '#ffe28a', weight: 700 });
       ctx.globalAlpha = 1;
     }
+    if (G.scene === 'play' || G.scene === 'dialog') drawGuestCounter();
     if (G.dialog) drawDialog();
+  }
+
+  // Imágenes de retrato cargadas bajo demanda; devuelve null hasta que estén listas (o si fallan).
+  const portraitImages = {};
+  function portraitImage(src) {
+    let im = portraitImages[src];
+    if (!im) {
+      im = portraitImages[src] = new Image();
+      im.src = src;
+    }
+    return im.complete && im.naturalWidth ? im : null;
   }
 
   function drawDialog() {
     const d = G.dialog;
     const box = { x: 20, y: 516, w: 920, h: 188 };
     const e = 1 - Math.pow(1 - d.anim, 3);
-    panel(box.x, box.y, box.w, box.h);
+    const accent = d.ch ? d.ch.shirt : '#ffd45e';
+
+    // Cuadro claro y plano: fondo crema, borde grueso y sombra sólida del color del personaje.
+    ctx.save();
+    ctx.globalAlpha = e;
+    ctx.translate(0, (1 - e) * 24);
+    rr(box.x + 6, box.y + 8, box.w, box.h, 24);
+    ctx.fillStyle = accent;
+    ctx.fill();
+    rr(box.x, box.y, box.w, box.h, 24);
+    ctx.fillStyle = '#fffaf0';
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = accent;
+    ctx.stroke();
+    ctx.restore();
 
     if (d.ch) {
       const size = 256;
-      const img = Art.portrait(d.ch, d.mood);
+      const file = d.ch.portraits && (d.ch.portraits[d.mood] || d.ch.portraits.normal);
+      const photo = file ? portraitImage(file) : null;
+      const img = photo || Art.portrait(d.ch, d.mood);
       const left = d.side === 'left';
-      const px = left ? 14 - (1 - e) * 60 : W - 14 - size + (1 - e) * 60;
-      const py = box.y + box.h - size - 6;
+      const pw = photo ? Math.round(size * 1.15 * photo.width / photo.height) : size;
+      const ph = photo ? Math.round(size * 1.15) : size;
+      const px = left ? 14 - (1 - e) * 60 : W - 14 - pw + (1 - e) * 60;
+      const py = box.y + box.h - ph - 6;
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, 0, W, box.y + box.h - 6);
       ctx.clip();
       ctx.globalAlpha = e;
-      ctx.imageSmoothingEnabled = false;
-      if (left) ctx.drawImage(img, px, py, size, size);
+      ctx.imageSmoothingEnabled = !!photo;
+      if (photo) ctx.drawImage(img, px, py, pw, ph);
+      else if (left) ctx.drawImage(img, px, py, size, size);
       else {
         ctx.translate(px + size, py);
         ctx.scale(-1, 1);
@@ -938,12 +985,21 @@
       }
       ctx.restore();
 
-      const label = `-${d.ch.name}-`;
-      ctx.font = `700 26px ${FONT}`;
-      const lw = ctx.measureText(label).width + 50;
-      const lx = left ? 280 : W - 280 - lw;
-      panel(lx, box.y - 30, lw, 46, true);
-      text(label, lx + lw / 2, box.y - 7, { size: 26, align: 'center', color: '#ffe28a', weight: 700 });
+      // Etiqueta con el nombre: píldora del color del personaje.
+      const label = d.ch.name;
+      ctx.font = `800 24px ${FONT}`;
+      const lw = ctx.measureText(label).width + 40, lh = 40;
+      const lx = left ? 280 : 44; // siempre en el lado izquierdo del cuadro
+      ctx.save();
+      ctx.globalAlpha = e;
+      rr(lx, box.y - lh / 2, lw, lh, lh / 2);
+      ctx.fillStyle = accent;
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#fffaf0';
+      ctx.stroke();
+      ctx.restore();
+      text(label, lx + lw / 2, box.y + 1, { size: 24, align: 'center', color: '#fff', weight: 800 });
     }
 
     const tx = d.side === 'left' ? 292 : d.side === 'right' ? 52 : 60;
@@ -953,16 +1009,18 @@
       const part = line.slice(0, remaining);
       remaining -= line.length;
       ctx.font = TEXT_FONT;
-      text(part, tx, box.y + 50 + i * 42, { size: 28 });
+      text(part, tx, box.y + 52 + i * 42, { size: 28, color: '#2b1d16', weight: 700, shadow: false });
     });
 
     if (d.shown >= d.total) {
-      const ax = box.x + box.w / 2, ay = box.y + box.h - 22 + Math.sin(G.t / 6) * 3;
-      ctx.fillStyle = '#ffd45e';
+      // Indicador de "continuar" en la esquina inferior derecha del cuadro.
+      const ax = d.side === 'right' ? box.x + 44 : box.x + box.w - 44, ay = box.y + box.h - 30 + Math.sin(G.t / 6) * 3;
+      ctx.fillStyle = accent;
       ctx.beginPath();
-      ctx.moveTo(ax - 10, ay - 6);
-      ctx.lineTo(ax + 10, ay - 6);
-      ctx.lineTo(ax, ay + 6);
+      ctx.moveTo(ax - 9, ay - 5);
+      ctx.lineTo(ax + 9, ay - 5);
+      ctx.lineTo(ax, ay + 7);
+      ctx.closePath();
       ctx.fill();
     }
   }
@@ -1022,17 +1080,47 @@
     requestAnimationFrame(frame);
   }
 
+  // Al terminar de hablar con un invitado cuenta como saludado.
+  function greetGuest(npc) {
+    const id = npc.def && npc.def.guest;
+    return id ? () => G.greeted.add(id) : null;
+  }
+
+  // Pone a todos los invitados cerca del protagonista; el de TEST_CHAT queda delante y le habla. Él solo escucha.
+  function startTestChat() {
+    const p = G.player;
+    const [dx, dy] = DIRS[p.dir];
+    let side = 0;
+    GUESTS.forEach(g => {
+      const lines = CHATS[g.chat].lines.map(l => ({ who: g.char, mood: l.image, text: l.text }));
+      const front = g.char === TEST_CHAT;
+      const x = p.x + dx + (front ? 0 : (++side % 2 ? -1 : 1) * Math.ceil(side / 2) * 2);
+      const npc = makeEntity(g.char, x, p.y + dy, OPP[p.dir], { talks: [lines], guest: g.char });
+      G.world.npcs.push(npc);
+      if (front) startDialog(lines, npc, false, greetGuest(npc));
+    });
+  }
+
   function boot() {
     resize();
     addEventListener('resize', resize);
-    G.world = createWorld(TITLE_MAP);
+    // TEMPORAL: sin menús, el juego arranca directamente en una zona abierta del parque de la urbanización.
+    const startAtPool = () => {
+      G.restart = startAtPool;
+      G.visited = new Set();
+      G.flags = new Set();
+      G.greeted = new Set();
+      enterMap('urba', 36, 20, 'down', false);
+      startTestChat();
+    };
+    startAtPool();
     if (location.search.includes('debug')) window.__G = G;
     requestAnimationFrame(frame);
   }
 
   const fontTimeout = new Promise(r => setTimeout(r, 1500));
   const fontLoad = document.fonts
-    ? Promise.all([document.fonts.load('28px "Pixelify Sans"'), document.fonts.load('700 28px "Pixelify Sans"')])
+    ? Promise.all([document.fonts.load('28px "Nunito"'), document.fonts.load('700 28px "Nunito"')])
     : Promise.resolve();
   Promise.race([fontLoad, fontTimeout]).catch(() => {}).then(boot);
 })();

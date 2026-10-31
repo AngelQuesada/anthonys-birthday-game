@@ -5,90 +5,82 @@
 const CHARACTERS = {
   kael: {
     id: "kael",
-    name: "Kael",
+    name: "Anthon",
     voice: 1.0,
-    skin: "#f3c9a0",
+    skin: "#f0b48c",
     hair: "#e0782e",
-    hairStyle: "spiky",
-    shirt: "#3b6fc4",
+    hairStyle: "bald",
+
+    look: { glasses: "round", eyes: "sparkle", mouth: "none" },
+    shirt: "#2b2b30",
     pants: "#4a3b2e",
-    eyes: "#3a7bd5",
+    eyes: "#35b04f",
+    // Retratos de diálogo por expresión (mood). "normal" usa la imagen base.
+    portraits: { normal: "characters/Anthon/base.png" },
   },
-  lira: {
-    id: "lira",
-    name: "Lira",
-    voice: 1.35,
-    skin: "#f6d3b3",
-    hair: "#b8834f",
-    hairStyle: "long",
-    elf: true,
-    shirt: "#c23b3b",
-    pants: "#6b4a2a",
-    eyes: "#3fa9e0",
-    trim: "#f2c14e",
-  },
-  tobias: {
-    id: "tobias",
-    name: "Tobías",
-    voice: 0.7,
-    skin: "#e3b08a",
-    hair: "#e4e4e4",
-    hairStyle: "old",
-    shirt: "#4f7a4a",
-    pants: "#5a4632",
-    eyes: "#5a4a3a",
-  },
-  pip: {
-    id: "pip",
-    name: "Pip",
-    voice: 1.65,
-    skin: "#f3c9a0",
-    hair: "#4a3222",
+  dominik: {
+    id: "dominik",
+    name: "Dominik",
+    voice: 0.95,
+    skin: "#f0c4a0",
+    hair: "#6b4a2e",
     hairStyle: "short",
-    hat: "#d94c3a",
-    shirt: "#e8b83a",
-    pants: "#3a5a8a",
-    eyes: "#7a4a2a",
+    shirt: "#8f959b",
+    pants: "#3a3f4a",
+    eyes: "#6a9ac8",
+    // El mood de cada línea es el nombre de la imagen (characters/Dominik/chat.txt); "normal" es la base.
+    portraits: {
+      normal: "characters/Dominik/base.png",
+      base: "characters/Dominik/base.png",
+      happy: "characters/Dominik/happy.png",
+    },
   },
-  nora: {
-    id: "nora",
-    name: "Nora",
-    voice: 1.25,
-    skin: "#e8b48c",
-    hair: "#2a1a14",
-    hairStyle: "long",
-    shirt: "#e05a9a",
-    pants: "#3a3a5a",
-    eyes: "#5a3a22",
-    trim: "#ffffff",
+  vives: {
+    id: "vives",
+    name: "Vives",
+    voice: 0.85,
+    skin: "#e8b890",
+    hair: "#3a2c24",
+    hairStyle: "short",
+    shirt: "#d9594f",
+    pants: "#3a3f4a",
+    eyes: "#4a3022",
+    portraits: {
+      normal: "characters/Vives/base.png",
+      base: "characters/Vives/base.png",
+      happy: "characters/Vives/happy.png",
+    },
   },
-  dani: {
-    id: "dani",
-    name: "Dani",
+  muha: {
+    id: "muha",
+    name: "Muha",
     voice: 0.9,
-    skin: "#c98e62",
-    hair: "#1e1410",
+    skin: "#d48a60",
+    hair: "#28221e",
     hairStyle: "short",
-    hat: "#2a2a2a",
-    shirt: "#7a3fbf",
-    pants: "#2a2a3a",
-    eyes: "#3a2a1a",
-  },
-  leo: {
-    id: "leo",
-    name: "Leo",
-    voice: 1.1,
-    skin: "#f6d3b3",
-    hair: "#f2d06a",
-    hairStyle: "spiky",
-    shirt: "#2fa8a0",
-    pants: "#e07a3a",
-    eyes: "#2a8a5a",
+    shirt: "#4a2d23",
+    pants: "#2e323b",
+    eyes: "#3a2418",
+    portraits: {
+      normal: "characters/Muha/base.png",
+      base: "characters/Muha/base.png",
+      happy: "characters/Muha/happy.png",
+    },
   },
 };
 
 // El protagonista siempre sale a la derecha en los diálogos.
 const PLAYER_CHAR = "kael";
+
+// Invitados de la fiesta: `chat` es la carpeta de characters/ (js/chats.js) y `char` su clave en CHARACTERS.
+// Anthon NUNCA habla en el juego, solo piensa: los demás le hablan y él escucha sin contestar.
+const GUESTS = [
+  { chat: "Dominik", char: "dominik" },
+  { chat: "Vives", char: "vives" },
+  { chat: "Muha", char: "muha" },
+];
+// Invitado en pruebas: nada más cargar aparece delante de Anthon y suelta su chat. Los demás esperan a su lado.
+const TEST_CHAT = "muha";
 
 /*
  * Leyenda del mapa:
@@ -99,8 +91,10 @@ const PLAYER_CHAR = "kael";
  * Una casa con `enter` lleva a otro mapa al andar hacia su puerta.
  *
  * Interiores (`interior: true`):
- *  X  borde    W  pared    _  suelo    D  puerta (suelo con felpudo)
- * Los muebles van en `furniture` como { type, x, y }; tipos en Art (bed, desk, rug...).
+ *  X  borde    W  pared    _  suelo    D  puerta (suelo con felpudo)    (espacio)  fuera de la casa
+ * Los muebles van en `furniture` como { type, x, y }; tipos en Art (bed, bigbed, sofa, rug...).
+ * Los de ancho variable (kitchen, bar, wardrobe, glass, lightdown, lightup) llevan además `w` y `h`.
+ * La cama marcada con `sleep: true` es la que usan las cinemáticas (dormir, levantarse).
  * `exits` lleva a otro mapa al pisar esa casilla. `signs` sirve para describir lo que se mira.
  *
  * Exteriores de la urbanización (además de lo de arriba):
@@ -148,6 +142,13 @@ function adosadosColumna(x, y, n, face) {
   }));
 }
 
+// Mismas líneas para todas las casillas de un rectángulo (muebles grandes): ...area(x, y, w, h, líneas) en `signs`.
+function area(x, y, w, h, lines) {
+  const out = {};
+  for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) out[`${i},${j}`] = lines;
+  return out;
+}
+
 const MAPS = {
   aldea: {
     name: "Anthonys Bday",
@@ -179,7 +180,7 @@ const MAPS = {
         h: 4,
         roof: "#c8553d",
         wall: "#d4a26a",
-        enter: { to: "casa", x: 6, y: 8, dir: "up" },
+        enter: { to: "casa", x: 11, y: 30, dir: "left" },
       },
       {
         x: 15,
@@ -220,214 +221,167 @@ const MAPS = {
         text: "¡Buenos días, mundo! Vamos a ver qué se cuenta la gente hoy.",
       },
     ],
-    npcs: [
-      {
-        char: "lira",
-        x: 20,
-        y: 6,
-        dir: "down",
-        talks: [
-          [
-            {
-              who: "lira",
-              mood: "angry",
-              text: "¡Kael! ¿Has visto a Pip? ¡Se ha llevado mi cesta de setas otra vez!",
-            },
-            {
-              who: "kael",
-              mood: "surprised",
-              text: "¿Otra vez? Esta semana ya van tres.",
-            },
-            {
-              who: "lira",
-              mood: "angry",
-              text: "Cuatro. Pero la del martes no cuenta porque eran setas venenosas.",
-            },
-            { who: "kael", text: "...¿Y eso no es peor?" },
-            {
-              who: "lira",
-              mood: "happy",
-              text: "Para él, sí. ¡Por eso no cuenta!",
-            },
-          ],
-          [
-            {
-              who: "lira",
-              mood: "happy",
-              text: "Dicen que si hablas con las plantas crecen más rápido.",
-            },
-            {
-              who: "lira",
-              text: "Llevo tres meses contándole mis problemas a este rosal.",
-            },
-            { who: "kael", text: "¿Y ha funcionado?" },
-            {
-              who: "lira",
-              mood: "angry",
-              text: "Se ha secado. Creo que le deprimí.",
-            },
-          ],
-          [
-            {
-              who: "lira",
-              text: "El viejo Tobías lleva cuarenta años pescando en ese estanque.",
-            },
-            { who: "kael", text: "¿Y qué ha pescado en todo ese tiempo?" },
-            { who: "lira", mood: "happy", text: "Un resfriado. Dos veces." },
-          ],
-        ],
-      },
-      {
-        char: "tobias",
-        x: 9,
-        y: 12,
-        dir: "left",
-        talks: [
-          [
-            {
-              who: "tobias",
-              text: "Shhh... No hagas ruido, chaval. Hoy pican.",
-            },
-            { who: "kael", text: "Llevas ahí desde el amanecer." },
-            {
-              who: "tobias",
-              mood: "happy",
-              text: "Exacto. La paciencia es el cebo del sabio.",
-            },
-            { who: "kael", text: "¿Y el cebo de verdad?" },
-            {
-              who: "tobias",
-              mood: "surprised",
-              text: "...Sabía que se me olvidaba algo.",
-            },
-          ],
-          [
-            {
-              who: "tobias",
-              text: "En mis tiempos pesqué un pez tan grande que hubo que ampliar el estanque.",
-            },
-            {
-              who: "kael",
-              mood: "surprised",
-              text: "Pero si el estanque es diminuto.",
-            },
-            {
-              who: "tobias",
-              mood: "happy",
-              text: "¡Pues imagínate cómo era antes!",
-            },
-          ],
-        ],
-      },
-      {
-        char: "pip",
-        x: 14,
-        y: 11,
-        dir: "down",
-        wander: 2,
-        talks: [
-          [
-            {
-              who: "pip",
-              mood: "happy",
-              text: "¡Kael! ¡Kael! ¡Mira lo que he encontrado!",
-            },
-            {
-              who: "kael",
-              mood: "surprised",
-              text: "¿Eso es... la cesta de Lira?",
-            },
-            {
-              who: "pip",
-              mood: "surprised",
-              text: "¿Qué cesta? Yo no veo ninguna cesta.",
-            },
-            { who: "pip", mood: "happy", text: "¡Adióoos!" },
-          ],
-          [
-            {
-              who: "pip",
-              text: "Cuando sea mayor voy a ser un héroe legendario.",
-            },
-            { who: "kael", text: "¿Ah, sí? ¿Y qué harás?" },
-            {
-              who: "pip",
-              mood: "happy",
-              text: "Ir por ahí hablando con todo el mundo pulsando ESPACIO.",
-            },
-            {
-              who: "kael",
-              mood: "surprised",
-              text: "Eso... me suena sospechosamente familiar.",
-            },
-          ],
-        ],
-      },
-    ],
   },
 
+  // La casa, según el plano dibujado a mano (el norte arriba):
+  //  arriba a la izquierda, el cuarto pequeño con la cama individual y los dos ordenadores;
+  //  arriba a la derecha, el dormitorio grande con la cama de matrimonio (donde despiertas) y la terraza;
+  //  en el centro, el pasillo con el baño y el cuarto de las dos camas a la derecha;
+  //  a la izquierda, la cocina entre dos encimeras; abajo, el salón (comedor) con el sofá rinconero, la tele,
+  //  la terraza del salón y la salida al patio (la D de la derecha).
   casa: {
-    name: "Mi habitación",
+    name: "Casa",
     interior: true,
     tiles: [
-      "XXXXXXXXXXXXXX",
-      "XWWWWWWWWWWWWX",
-      "XWWWWWWWWWWWWX",
-      "X____________X",
-      "X____________X",
-      "X____________X",
-      "X____________X",
-      "X____________X",
-      "X____________X",
-      "XXXXXXDXXXXXXX",
+      "XXXXXXXXXXXXXXXXXXXXX", // 0
+      "XWWWWWWXWWWWWWWWWWWWX",
+      "XWWWWWWXWWWWWWWWWWWWX",
+      "X______X____________X", // 3  cuarto pequeño | dormitorio grande
+      "X______X____________X",
+      "X______X____________X",
+      "X______X____________X",
+      "X______X____________X",
+      "X______XX__XXXXXXXXXX", // 8  puerta del dormitorio grande al pasillo
+      "X______XW__WXWWWWWWWX",
+      "X______X____X_______X", // 10 baño
+      "X______X____________X", // 11 puerta del baño
+      "X___________________X", // 12 puerta del cuarto pequeño al pasillo
+      "X___________X_______X",
+      "XXXXXXXX____X_______X",
+      "XWWWWWW_____X_______X", // 15
+      "X___________XXXXXXXXX", // 16 cocina
+      "X___________XWWWWWWWX",
+      "X___________X_______X", // 18 armario empotrado
+      "X___________________X", // 19 encimera americana | puerta del cuarto de las dos camas
+      "X___________________X", // 20 salón
+      "X___________X_______X",
+      "X___________X_______X",
+      "X___________X_______X",
+      "X___________X_______X",
+      "X___________X_______X",
+      "X___________XXXXXXXXX", // 26 ventana del cuarto de las dos camas
+      "X___________X        ",
+      "X___________X        ",
+      "X___________X        ",
+      "X___________D        ", // 30 salida al patio
+      "X___________D        ",
+      "X___________X        ",
+      "XXXXXXXXXXXXX        ", // 33 terraza del salón
     ],
     furniture: [
-      { type: "calendar", x: 4, y: 1 },
-      { type: "window", x: 5, y: 1 },
-      { type: "rug", x: 5, y: 5 },
-      { type: "sunbeam", x: 5, y: 3 },
-      { type: "bed", x: 1, y: 3 },
-      { type: "nightstand", x: 3, y: 3 },
-      { type: "desk", x: 8, y: 3 },
-      { type: "chair", x: 8, y: 4 },
-      { type: "bookshelf", x: 10, y: 3 },
-      { type: "plant", x: 12, y: 3 },
-      { type: "plant", x: 12, y: 8 },
+      // cuarto pequeño de arriba a la izquierda
+      { type: "window", x: 2, y: 1 },
+      { type: "singlebed", x: 5, y: 3 },
+      { type: "pcdesk", x: 1, y: 7 },
+      { type: "officechair", x: 2, y: 7 },
+      { type: "pcdesk", x: 1, y: 10 },
+      { type: "officechair", x: 2, y: 10 },
+      { type: "plant", x: 3, y: 13 },
+      // dormitorio grande: la cama contra la pared derecha, con una mesita encima y otra debajo,
+      // y la mesa alargada a su altura contra la pared de enfrente
+      { type: "calendar", x: 9, y: 1 },
+      { type: "terrace", x: 11, y: 1 },
+      { type: "lightdown", x: 11, y: 3, w: 4, h: 3 },
+      { type: "bigbed", x: 16, y: 4, sleep: true },
+      { type: "nightstand", x: 19, y: 3 },
+      { type: "nightstand", x: 19, y: 7 },
+      { type: "sidetable", x: 8, y: 4 },
+      // baño
+      { type: "toilet", x: 15, y: 10 },
+      { type: "bathtub", x: 18, y: 10 },
+      { type: "sink", x: 15, y: 15 },
+      // cocina
+      { type: "kitchen", x: 1, y: 16, w: 6 },
+      { type: "fridge", x: 1, y: 17 },
+      { type: "bar", x: 1, y: 19, w: 6 },
+      // cuarto de las dos camas
+      { type: "wardrobe", x: 13, y: 18, w: 7 },
+      { type: "clothestable", x: 19, y: 20 },
+      { type: "kidbed", x: 13, y: 23 },
+      { type: "kidbed", x: 18, y: 23 },
+      { type: "glass", x: 15, y: 26, w: 3 },
+      // salón
+      { type: "sofa", x: 1, y: 20 },
+      { type: "chaise", x: 1, y: 22 },
+      { type: "coffeetable", x: 4, y: 23 },
+      { type: "tvstand", x: 11, y: 22 },
+      { type: "glass", x: 5, y: 33, w: 7 },
+      { type: "lightup", x: 5, y: 29, w: 7, h: 4 },
+      { type: "plant", x: 1, y: 32 },
     ],
-    exits: { "6,9": { to: "urba", x: 43, y: 8, dir: "down" } },
+    // «Nueva partida» empieza aquí, en el salón (la cinemática de despertar está en STORY.opening).
+    playerStart: { x: 7, y: 27, dir: "down" },
+    exits: {
+      "12,30": { to: "urba", x: 43, y: 8, dir: "down" },
+      "12,31": { to: "urba", x: 43, y: 8, dir: "down" },
+    },
     signs: {
-      "1,4": [
-        {
-          who: "kael",
-          text: "Todavía está calentita... No. Fuerza de voluntad.",
-        },
-      ],
-      "2,4": [
-        {
-          who: "kael",
-          text: "Todavía está calentita... No. Fuerza de voluntad.",
-        },
-      ],
-      "3,3": [
+      // dormitorio grande
+      ...area(16, 4, 4, 3, [
+        { who: "kael", text: "Todavía está calentita... No. Fuerza de voluntad." },
+      ]),
+      ...area(19, 3, 1, 1, [
         { text: "El despertador marca las once y media." },
-        {
-          who: "kael",
-          mood: "surprised",
-          text: "...Lo he vuelto a apagar sin despertarme.",
-        },
-      ],
-      "4,2": [
-        {
-          text: "Un calendario. Hay un día marcado con un círculo rojo enorme.",
-        },
+        { who: "kael", mood: "surprised", text: "...Lo he vuelto a apagar sin despertarme." },
+      ]),
+      ...area(19, 7, 1, 1, [{ text: "Otra mesita con otro despertador. Este ni siquiera tiene pilas." }]),
+      ...area(8, 4, 1, 3, [{ text: "Una mesa con una lámpara y un montón de libros que nadie ha terminado." }]),
+      "9,2": [
+        { text: "Un calendario. Hay un día marcado con un círculo rojo enorme." },
         { who: "kael", text: "Tengo la sensación de que se me olvida algo..." },
       ],
-      "5,2": [{ text: "Hace un día precioso ahí fuera." }],
-      "6,2": [{ text: "Hace un día precioso ahí fuera." }],
-      "8,3": [{ text: "Apuntes a medio hacer. Mejor ni mirarlos." }],
-      "9,3": [{ text: "Apuntes a medio hacer. Mejor ni mirarlos." }],
-      "10,3": [{ text: "«Cómo despertarse a la primera», tomo I. Sin abrir." }],
-      "11,3": [{ text: "«Cómo despertarse a la primera», tomo I. Sin abrir." }],
+      ...area(11, 2, 4, 1, [
+        { text: "La puerta de la terraza. Entra un sol que da gusto." },
+        { who: "kael", text: "Está atrancada. Como yo los lunes." },
+      ]),
+      // cuarto pequeño
+      ...area(2, 2, 2, 1, [{ text: "Hace un día precioso ahí fuera." }]),
+      ...area(5, 3, 2, 3, [
+        { text: "Una cama perfectamente hecha. Aquí no ha dormido nadie... o alguien muy ordenado." },
+      ]),
+      ...area(1, 7, 1, 2, [
+        { text: "El ordenador está en suspensión. En la pantalla hay una nota: «¡No olvides lo de hoy!»." },
+        { who: "kael", mood: "surprised", text: "¿Lo de hoy? ¿Qué es lo de hoy?" },
+      ]),
+      ...area(1, 10, 1, 2, [{ text: "Una partida a medias. Mejor no tocar nada si quieres seguir vivo." }]),
+      // baño
+      "15,10": [{ text: "Mejor no." }],
+      "15,15": [
+        { text: "Te miras en el espejo." },
+        { who: "kael", mood: "surprised", text: "Este pelo necesita ayuda profesional." },
+      ],
+      ...area(18, 10, 2, 3, [{ text: "La bañera. Un patito de goma te vigila en silencio." }]),
+      // cocina
+      ...area(1, 16, 6, 1, [{ text: "La cocina está recogida. Sospechosamente recogida." }]),
+      ...area(1, 17, 1, 2, [
+        { text: "Abres la nevera. Hay un hueco enorme, como si alguien se hubiera llevado algo muy grande." },
+        { who: "kael", text: "...¿Y mi yogur?" },
+      ]),
+      ...area(1, 19, 6, 1, [
+        { text: "Hay una lista en la encimera: «globos, velas, confeti...». El resto está tachado." },
+      ]),
+      // cuarto de las dos camas
+      ...area(13, 18, 7, 1, [
+        { text: "El armario empotrado. Está tan lleno que da miedo abrirlo." },
+        { who: "kael", text: "Mejor dejarlo así. Por la seguridad de todos." },
+      ]),
+      ...area(19, 20, 1, 2, [{ text: "Un montón de ropa doblada. Bueno, «doblada»." }]),
+      ...area(13, 23, 2, 3, [{ text: "La cama está vacía. Qué silencio hay hoy en casa..." }]),
+      ...area(18, 23, 2, 3, [{ text: "La cama está vacía. Qué silencio hay hoy en casa..." }]),
+      ...area(15, 26, 3, 1, [{ text: "Por la ventana se ve el patio. Ni un alma." }]),
+      // salón
+      ...area(1, 20, 6, 2, [
+        { text: "El sofá. Tiene la forma exacta de alguien que se pasó aquí todo el domingo." },
+      ]),
+      ...area(1, 22, 2, 5, [
+        { text: "El sofá. Tiene la forma exacta de alguien que se pasó aquí todo el domingo." },
+      ]),
+      ...area(4, 23, 1, 3, [{ text: "El mando de la tele. Le faltan las pilas, como siempre." }]),
+      ...area(11, 22, 1, 3, [
+        { text: "La tele está apagada. En el reflejo se ve a alguien despeinado..." },
+        { who: "kael", text: "Ah, que soy yo." },
+      ]),
+      ...area(5, 33, 7, 1, [{ text: "La terraza del salón. Está cerrada, pero entra una luz muy bonita." }]),
     },
   },
 
@@ -535,7 +489,7 @@ const MAPS = {
     ],
     houses: [
       ...adosados(28, 4, 3, {
-        2: { enter: { to: "casa", x: 6, y: 8, dir: "up" } },
+        2: { enter: { to: "casa", x: 11, y: 30, dir: "left" } },
       }),
       // a la derecha de nuestro bloque, al otro lado del camino: las dos columnas de la derecha
       // siguen hasta la carretera, también mirando a la izquierda
@@ -703,216 +657,6 @@ const MAPS = {
       ],
       "39,84": [{ text: "El tobogán quema como una sartén. Mejor no." }],
     },
-    triggers: [
-      {
-        id: "sorpresa",
-        area: [36, 47, 37, 47],
-        steps: [
-          { face: "player" },
-          { sfx: "cheer" },
-          { wait: 20 },
-          {
-            say: [
-              { who: "lira", mood: "happy", text: "¡¡SORPRESAAA!!" },
-              { who: "pip", mood: "happy", text: "¡FELIZ CUMPLEAÑOS!" },
-              {
-                who: "kael",
-                mood: "surprised",
-                text: "¿¡Todo esto es para mí!?",
-              },
-              {
-                who: "nora",
-                mood: "happy",
-                text: "¡Pues claro! Llevamos desde las nueve esperándote.",
-              },
-              { who: "dani", text: "Son las doce. Los hielos ya son agua." },
-              {
-                who: "kael",
-                mood: "happy",
-                text: "...Así que eso era lo del calendario.",
-              },
-            ],
-          },
-        ],
-      },
-    ],
-    npcs: [
-      {
-        char: "lira",
-        x: 33,
-        y: 48,
-        dir: "down",
-        dance: true,
-        talks: [
-          [
-            {
-              who: "lira",
-              mood: "happy",
-              text: "¡Las flechas las pinté yo! ¿A que eran preciosas?",
-            },
-            { who: "kael", text: "Una apuntaba a un árbol." },
-            {
-              who: "lira",
-              mood: "angry",
-              text: "Era un árbol muy importante.",
-            },
-          ],
-          [
-            { who: "lira", mood: "happy", text: "¡Baila conmigo!" },
-            { who: "kael", text: "Pero si no hay música." },
-            { who: "lira", mood: "happy", text: "¡La llevo dentro!" },
-          ],
-        ],
-      },
-      {
-        char: "nora",
-        x: 40,
-        y: 48,
-        dir: "down",
-        dance: true,
-        talks: [
-          [
-            {
-              who: "nora",
-              mood: "happy",
-              text: "¡Feliz cumple! ¿Te ha gustado la búsqueda del tesoro?",
-            },
-            { who: "kael", text: "Casi me voy por el camino equivocado." },
-            {
-              who: "nora",
-              mood: "happy",
-              text: "Por eso pusimos la nota de «frío, frío». Te conocemos.",
-            },
-          ],
-          [
-            {
-              who: "nora",
-              text: "Pip quería esconder la fiesta dentro de la piscina.",
-            },
-            { who: "kael", mood: "surprised", text: "¿Debajo del agua?" },
-            {
-              who: "nora",
-              mood: "happy",
-              text: "Le dijimos que no. Él lo está intentando igual.",
-            },
-          ],
-        ],
-      },
-      {
-        char: "dani",
-        x: 30,
-        y: 56,
-        dir: "right",
-        dance: true,
-        talks: [
-          [
-            { who: "dani", text: "Bienvenido a la sesión de DJ Dani." },
-            { who: "kael", text: "Los altavoces están apagados." },
-            {
-              who: "dani",
-              mood: "happy",
-              text: "Es una sesión de silencio. Muy exclusiva.",
-            },
-          ],
-          [
-            {
-              who: "dani",
-              text: "Petición del público: ¿qué quieres escuchar?",
-            },
-            { who: "kael", text: "¿Algo animado?" },
-            {
-              who: "dani",
-              mood: "happy",
-              text: "Hecho. En cuanto encuentre el cable del altavoz.",
-            },
-          ],
-        ],
-      },
-      {
-        char: "tobias",
-        x: 39,
-        y: 64,
-        dir: "left",
-        talks: [
-          [
-            {
-              who: "tobias",
-              text: "Feliz cumpleaños, chaval. En mis tiempos las fiestas duraban tres días.",
-            },
-            { who: "kael", mood: "surprised", text: "¿Tres días?" },
-            {
-              who: "tobias",
-              mood: "happy",
-              text: "Bueno, era una fiesta normal. Pero tardábamos dos en encontrar la casa.",
-            },
-          ],
-          [
-            {
-              who: "tobias",
-              text: "He traído la caña. Por si hay peces en la piscina.",
-            },
-            { who: "kael", text: "Tobías, es una piscina." },
-            { who: "tobias", mood: "happy", text: "Eso decían del estanque." },
-          ],
-        ],
-      },
-      {
-        char: "pip",
-        x: 34,
-        y: 60,
-        dir: "down",
-        swim: true,
-        wander: 2,
-        talks: [
-          [
-            {
-              who: "pip",
-              mood: "happy",
-              text: "¡Kael! ¡Métete! ¡El agua está buenísima!",
-            },
-            { who: "kael", text: "¿Desde qué hora estás ahí dentro?" },
-            { who: "pip", mood: "surprised", text: "¿Qué día es hoy?" },
-          ],
-          [
-            {
-              who: "pip",
-              mood: "happy",
-              text: "¡Mira! ¡Puedo aguantar la respiración diez segundos!",
-            },
-            {
-              who: "pip",
-              mood: "surprised",
-              text: "...Bueno, tres. Pero muy intensos.",
-            },
-          ],
-        ],
-      },
-      {
-        char: "leo",
-        x: 38,
-        y: 52,
-        dir: "right",
-        swim: true,
-        wander: 1,
-        talks: [
-          [
-            {
-              who: "leo",
-              mood: "happy",
-              text: "¡Felicidades! Te he traído un regalo.",
-            },
-            { who: "kael", mood: "happy", text: "¿En serio? ¿Qué es?" },
-            { who: "leo", text: "Está en la pila. Es el que hace tictac." },
-            { who: "kael", mood: "surprised", text: "..." },
-            {
-              who: "leo",
-              mood: "happy",
-              text: "¡Es un reloj! ¿Qué te pensabas?",
-            },
-          ],
-        ],
-      },
-    ],
   },
 };
 
@@ -933,7 +677,7 @@ const MAPS = {
 const STORY = {
   opening: {
     map: "casa",
-    spawn: { x: 2, y: 4, dir: "down" },
+    spawn: { x: 18, y: 6, dir: "down" },
     steps: [
       { dark: 1 },
       { pose: "sleep" },
@@ -951,7 +695,7 @@ const STORY = {
       { pose: "sit" },
       { sfx: "rustle" },
       { wait: 50 },
-      { getUp: { x: 3, y: 4, dir: "down" } },
+      { getUp: { x: 18, y: 7, dir: "down" } },
       { wait: 25 },
       {
         say: [
@@ -971,7 +715,7 @@ const STORY = {
  * «Nueva partida» empieza por el primero.
  */
 const LEVELS = [
-  { name: "La casa", story: "opening" },
+  { name: "La casa", map: "casa" },
   { name: "El patio", map: "urba" },
   { name: "La batalla contra el monstruo", minigame: "chase" },
   { name: "La playa", soon: true },
@@ -1002,10 +746,10 @@ const CREDITS = [
   { t: "Sintetizado en tiempo real con Web Audio" },
   {},
   { h: "Tipografía" },
-  { t: "Pixelify Sans" },
+  { t: "Nunito" },
   {},
   { h: "Reparto" },
-  { t: "Kael · Lira · Tobías · Pip" },
+  { t: "Anthon · Dominik · Vives · Muha" },
   { t: "y un rosal deprimido" },
   {},
   {},
