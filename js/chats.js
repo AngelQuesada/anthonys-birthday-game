@@ -1,6 +1,42 @@
 "use strict";
 // GENERADO por tools/sync-chats.js a partir de characters/*/chat.txt. No editar a mano.
 const CHATS = {
+  "Diego": {
+    "images": {
+      "base": "characters/Diego/base.png",
+      "happy": "characters/Diego/happy.png"
+    },
+    "lines": [
+      {
+        "image": "base",
+        "text": "Different accents, same humor, big hearts, and even bigger plans to do absolutely nothing."
+      },
+      {
+        "image": "base",
+        "text": "Feliz Cumpleaños Anthon! ❤️"
+      },
+      {
+        "image": "happy",
+        "text": "Happy Birthday to my fellow big bitch!"
+      },
+      {
+        "image": "base",
+        "text": "Here's to another year of big laughs, big hearts, and very little motivation!"
+      },
+      {
+        "image": "happy",
+        "text": "We just simply cant be bothered."
+      },
+      {
+        "image": "base",
+        "text": "Cheers to you on your birthday! Big boy energy, British charm, and a heart of gold!"
+      },
+      {
+        "image": "base",
+        "text": "You are a Gem! Love you babes ❤️"
+      }
+    ]
+  },
   "Dominik": {
     "images": {
       "base": "characters/Dominik/base.png",

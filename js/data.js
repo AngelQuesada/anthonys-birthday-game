@@ -67,6 +67,22 @@ const CHARACTERS = {
       happy: "characters/Muha/happy.png",
     },
   },
+  diego: {
+    id: "diego",
+    name: "Diego",
+    voice: 0.8,
+    skin: "#e8a888",
+    hair: "#7a6a62",
+    hairStyle: "short",
+    shirt: "#2f4fa0",
+    pants: "#3a3f4a",
+    eyes: "#4a3022",
+    portraits: {
+      normal: "characters/Diego/base.png",
+      base: "characters/Diego/base.png",
+      happy: "characters/Diego/happy.png",
+    },
+  },
 };
 
 // El protagonista siempre sale a la derecha en los diálogos.
@@ -78,9 +94,10 @@ const GUESTS = [
   { chat: "Dominik", char: "dominik" },
   { chat: "Vives", char: "vives" },
   { chat: "Muha", char: "muha" },
+  { chat: "Diego", char: "diego" },
 ];
 // Invitado en pruebas: nada más cargar aparece delante de Anthon y suelta su chat. Los demás esperan a su lado.
-const TEST_CHAT = "muha";
+const TEST_CHAT = "diego";
 
 /*
  * Leyenda del mapa:
@@ -749,7 +766,7 @@ const CREDITS = [
   { t: "Nunito" },
   {},
   { h: "Reparto" },
-  { t: "Anthon · Dominik · Vives · Muha" },
+  { t: "Anthon · Dominik · Vives · Muha · Diego" },
   { t: "y un rosal deprimido" },
   {},
   {},
