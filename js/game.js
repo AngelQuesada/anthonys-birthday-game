@@ -1095,7 +1095,8 @@
       const lines = CHATS[g.chat].lines.map(l => ({ who: g.char, mood: l.image, text: l.text }));
       const front = g.char === TEST_CHAT;
       const x = p.x + dx + (front ? 0 : (++side % 2 ? -1 : 1) * Math.ceil(side / 2) * 2);
-      const npc = makeEntity(g.char, x, p.y + dy, OPP[p.dir], { talks: [lines], guest: g.char });
+      // todos de cara a la pantalla ('down') y así se quedan al terminar de hablar
+      const npc = makeEntity(g.char, x, p.y + dy, 'down', { talks: [lines], guest: g.char });
       G.world.npcs.push(npc);
       if (front) startDialog(lines, npc, false, greetGuest(npc));
     });
