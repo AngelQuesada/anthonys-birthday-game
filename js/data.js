@@ -83,6 +83,123 @@ const CHARACTERS = {
       happy: "characters/Diego/happy.png",
     },
   },
+  oscar: {
+    id: "oscar",
+    name: "Oscar",
+    voice: 0.92,
+    skin: "#f7cfaa",
+    hair: "#65625d",
+    hairStyle: "short",
+    shirt: "#585652",
+    pants: "#3a3d40",
+    eyes: "#4a382c",
+    portraits: {
+      normal: "characters/Oscar/base.png",
+      base: "characters/Oscar/base.png",
+      happy: "characters/Oscar/happy.png",
+    },
+  },
+  tymen: {
+    id: "tymen",
+    name: "Tymen",
+    voice: 0.88,
+    skin: "#fcd8ba",
+    hair: "#8a603c",
+    hairStyle: "short",
+    shirt: "#6b6844",
+    pants: "#3a3f4a",
+    eyes: "#4a382c",
+    portraits: {
+      normal: "characters/Tymen/base.png",
+      base: "characters/Tymen/base.png",
+      happy: "characters/Tymen/happy.png",
+    },
+  },
+  ricardo: {
+    id: "ricardo",
+    name: "Ricardo",
+    voice: 0.65,
+    isDog: true,
+    fur: "#efd7af",
+    collar: "#e03b2e",
+    skin: "#efd7af",
+    hair: "#c89a65",
+    hairStyle: "short",
+    shirt: "#e03b2e",
+    pants: "#3a3f4a",
+    eyes: "#2b1a10",
+    portraits: {
+      normal: "characters/Ricardo/base.png",
+      base: "characters/Ricardo/base.png",
+      disapointed: "characters/Ricardo/disapointed.png",
+      mad: "characters/Ricardo/mad.png",
+      scared: "characters/Ricardo/scared.png",
+    },
+  },
+  mark: {
+    id: "mark",
+    name: "Mark",
+    voice: 0.75,
+    skin: "#f8c099",
+    hair: "#dcd2c6",
+    hairStyle: "short",
+    shirt: "#2b211e",
+    pants: "#281c1c",
+    eyes: "#4a3022",
+    portraits: {
+      normal: "characters/Mark/base.png",
+      base: "characters/Mark/base.png",
+      happy: "characters/Mark/happy.png",
+    },
+  },
+  jamie: {
+    id: "jamie",
+    name: "Jamie",
+    voice: 0.9,
+    skin: "#dfa87d",
+    hair: "#a8784a",
+    hairStyle: "long",
+    shirt: "#2d2622",
+    pants: "#3a3530",
+    eyes: "#4a3022",
+    portraits: {
+      normal: "characters/Jamie/base.png",
+      base: "characters/Jamie/base.png",
+      happy: "characters/Jamie/happy.png",
+    },
+  },
+  carol: {
+    id: "carol",
+    name: "Carol",
+    voice: 0.95,
+    skin: "#f2c097",
+    hair: "#302d32",
+    hairStyle: "long",
+    shirt: "#5a789a",
+    pants: "#415b78",
+    eyes: "#3b2c24",
+    portraits: {
+      normal: "characters/Carol/base.png",
+      base: "characters/Carol/base.png",
+      happy: "characters/Carol/happy.png",
+    },
+  },
+  owen: {
+    id: "owen",
+    name: "Owen",
+    voice: 1.05,
+    skin: "#f9c7a2",
+    hair: "#35211c",
+    hairStyle: "short",
+    shirt: "#3a3532",
+    pants: "#393f43",
+    eyes: "#3b2c24",
+    portraits: {
+      normal: "characters/Owen/base.png",
+      base: "characters/Owen/base.png",
+      happy: "characters/Owen/happy.png",
+    },
+  },
 };
 
 // El protagonista siempre sale a la derecha en los diálogos.
@@ -95,9 +212,16 @@ const GUESTS = [
   { chat: "Vives", char: "vives" },
   { chat: "Muha", char: "muha" },
   { chat: "Diego", char: "diego" },
+  { chat: "Oscar", char: "oscar" },
+  { chat: "Tymen", char: "tymen" },
+  { chat: "Ricardo", char: "ricardo" },
+  { chat: "Mark", char: "mark" },
+  { chat: "Jamie", char: "jamie" },
+  { chat: "Carol", char: "carol" },
+  { chat: "Owen", char: "owen" },
 ];
 // Invitado en pruebas: nada más cargar aparece delante de Anthon y suelta su chat. Los demás esperan a su lado.
-const TEST_CHAT = "diego";
+const TEST_CHAT = "owen";
 
 /*
  * Leyenda del mapa:
@@ -247,7 +371,7 @@ const MAPS = {
   //  a la izquierda, la cocina entre dos encimeras; abajo, el salón (comedor) con el sofá rinconero, la tele,
   //  la terraza del salón y la salida al patio (la D de la derecha).
   casa: {
-    name: "Casa",
+    name: "Condado de Alhama, Murcia Apartment",
     interior: true,
     tiles: [
       "XXXXXXXXXXXXXXXXXXXXX", // 0
@@ -329,8 +453,8 @@ const MAPS = {
     // «Nueva partida» empieza aquí, en el salón (la cinemática de despertar está en STORY.opening).
     playerStart: { x: 7, y: 27, dir: "down" },
     exits: {
-      "12,30": { to: "urba", x: 43, y: 8, dir: "down" },
-      "12,31": { to: "urba", x: 43, y: 8, dir: "down" },
+      "12,30": { to: "urba", x: 44, y: 9, dir: "right" },
+      "12,31": { to: "urba", x: 44, y: 9, dir: "right" },
     },
     signs: {
       // dormitorio grande
@@ -367,7 +491,7 @@ const MAPS = {
         { text: "Te miras en el espejo." },
         { who: "kael", mood: "surprised", text: "Este pelo necesita ayuda profesional." },
       ],
-      ...area(18, 10, 2, 3, [{ text: "La bañera. Un patito de goma te vigila en silencio." }]),
+      ...area(18, 10, 2, 4, [{ text: "La bañera. Un patito de goma te vigila en silencio." }]),
       // cocina
       ...area(1, 16, 6, 1, [{ text: "La cocina está recogida. Sospechosamente recogida." }]),
       ...area(1, 17, 1, 2, [
@@ -407,31 +531,31 @@ const MAPS = {
   // con un camino a cada lado. Debajo, el gran parque de palmeras con la piscina a dos tercios y la zona
   // de arena al fondo; a los lados, filas de adosados separadas del parque por una franja de césped.
   urba: {
-    name: "La urbanización",
+    name: "Condado de Alhama Residential Area",
     tiles: [
       'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
       'TaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaT',
       'TaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaT',
       'T------------------------------------------------------------------------T',
-      'T..........................=..................=...............-.........-T',
-      'T.Y........................=..................=...,..w:::.....-w:::.....-T',
-      'T.....,.........T..........=..........,.......=......::::.....-::::.....-T',
-      'T.,......T...,.........Y...=........,.........=......wwww.....-wwww.....-T',
-      'T..........................=w....bw....bw::::w=.,....w:::.....-w:::.....-T',
-      'T,........Y.Y...T..........=w.....w.....w::::w=..,...::::.....-::::.....-T',
-      'T....T........,............=w.....w.....w::::w=...,..wwww.....-wwww.....-T',
-      'T..........................=w.....w.....w::::w=..,...w:::.....-w:::.....-T',
-      'T..........................=wb....wb....w::::w=......::::.....-::::.,...-T',
-      'T.Y.....Y......Y...........=www.wwwww.wwwg:www=......wwww.....-wwww.....-T',
-      'T.....,....Y.,.............=...............g..=......w:::.....-w:::.....-T',
-      'T........Y.................=...........g......=......::::.....-::::.....-T',
+      'T..........................=...................=..............-.........-T',
+      'T.Y........................=...................=..,..w:::.....-w:::.....-T',
+      'T.....,.........T..........=..........,........=.....::::.....-::::.....-T',
+      'T.,......T...,.........Y...=........,..........=.....wwww.....-wwww.....-T',
+      'T..........................=w....bw....b::::::w=,....w:::.....-w:::.....-T',
+      'T,........Y.Y...T..........=w.....w.....::::::w=.,...::::.....-::::.....-T',
+      'T....T........,............=w.....w.....w:::::w=..,..wwww.....-wwww.....-T',
+      'T..........................=w.....w.....w:::::w=.,...w:::.....-w:::.....-T',
+      'T..........................=wb....wb....w:::::w=.....::::.....-::::.,...-T',
+      'T.Y.....Y......Y...........=www.wwwww.wwwg:wwww=.....wwww.....-wwww.....-T',
+      'T.....,....Y.,.............=...............g...=.....w:::.....-w:::.....-T',
+      'T........Y.................=...........g.......=.....::::.....-::::.....-T',
       'T.....................======..................======.wwww.....-wwww.....-T',
       'T---------------------=........Y...................=---------------------T',
       'T-w::..........::::w..=.....Y...............Y......=.w:::.....-w:::.....-T',
       'T-:::........,.:::::..=..................T.........=.::::.....-::::.....-T',
       'T-www..........wwwww..=............................=.wwww.....-wwww.....-T',
       'T-w::..........::::w..=..Y..Y.Y...........Y.....b..=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=..............................=.::::.....-::::.....-T',
+      'T-:::..........:::::..=............................=.::::.....-::::.....-T',
       'T-www..........wwwww..=..T.........................=.wwww.....-wwww.,...-T',
       'T-w::..........::::w..=......T..........,.Y..Y.....=.w:::.....-w:::...,.-T',
       'T-:::..........:::::..=..........T.................=.::::.....-::::.....-T',
@@ -505,9 +629,19 @@ const MAPS = {
       'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
     ],
     houses: [
-      ...adosados(28, 4, 3, {
-        2: { enter: { to: "casa", x: 11, y: 30, dir: "left" } },
-      }),
+      // la nuestra es la de la derecha. Como en el plano de dentro, el salón sobresale hacia el patio
+      // por la izquierda (el anexo de debajo) y la habitación de las dos camas da al tramo estrecho del patio.
+      ...adosados(28, 4, 3, { 2: { door: false } }),
+      {
+        x: 40,
+        y: 8,
+        w: 4,
+        h: 2,
+        style: "annex",
+        face: "right", // puerta del lateral (la D del salón), en (43,9)
+        terrace: [1, 2], // cristalera de la terraza del salón, en x41-42 (sin llegar a la esquina)
+        enter: { to: "casa", x: 11, y: 30, dir: "left" },
+      },
       // a la derecha de nuestro bloque, al otro lado del camino: las dos columnas de la derecha
       // siguen hasta la carretera, también mirando a la izquierda
       ...adosadosColumna(57, 5, 4, "left"),
@@ -549,11 +683,9 @@ const MAPS = {
       { type: "carwhite", x: 50, y: 1 },
       { type: "car", x: 64, y: 2 },
       // patio: mesa con sillas a la derecha
-      { type: "gardenchair", x: 43, y: 10 },
-      { type: "gardenchair", x: 44, y: 10 },
-      { type: "patiotable", x: 43, y: 11 },
-      { type: "gardenchair", x: 43, y: 12 },
+      { type: "patiotable", x: 44, y: 11 },
       { type: "gardenchair", x: 44, y: 12 },
+      { type: "gardenchair", x: 45, y: 12 },
       // parque: bancos y balizas junto a los dos caminos laterales (por dentro del parque no hay caminos)
       { type: "bench", x: 23, y: 25 },
       { type: "bench", x: 23, y: 45 },
@@ -583,7 +715,7 @@ const MAPS = {
       { type: "bunting", x0: 30, x1: 43, y: 47 },
       { type: "confetti", area: [30, 47, 43, 68] },
     ],
-    playerStart: { x: 43, y: 8, dir: "down" },
+    playerStart: { x: 44, y: 9, dir: "right" },
     intro: [
       { who: "kael", text: "Qué silencio hay hoy en la urbanización..." },
       { who: "kael", mood: "surprised", text: "¿Eso de la verja es un globo?" },
@@ -640,10 +772,13 @@ const MAPS = {
         },
         { who: "kael", text: "¿Qué estará pasando ahí dentro?" },
       ],
-      "43,11": [
+      ...area(41, 9, 2, 1, [
+        { text: "La puerta de la terraza del salón, vista desde fuera. Está cerrada." },
+      ]),
+      "44,11": [
         { text: "La mesa del patio. Alguien ha dejado una limonada a medias." },
       ],
-      "44,11": [
+      "45,11": [
         { text: "La mesa del patio. Alguien ha dejado una limonada a medias." },
       ],
       "39,57": [
@@ -673,6 +808,113 @@ const MAPS = {
         },
       ],
       "39,84": [{ text: "El tobogán quema como una sartén. Mejor no." }],
+    },
+  },
+
+  // Escenario 3: la playa, con la misma orientación que la foto aérea: el mar arriba y la carretera abajo.
+  // Se empieza en la acera (punto 1), junto al coche estrellado contra una palmera; la carretera está
+  // cortada con conos a los dos lados, así que solo se puede subir a la arena. A la izquierda, el recinto
+  // cerrado de las palmeras (punto 4); a la derecha, el jardín amurallado de la casa grande.
+  // La arena sube hasta el agua (punto 5). Desde ahí, una cuesta de arenisca lleva al mirador (punto 2)
+  // y un caminito entre piedras (que no se pueden pisar) llega a la puerta de la casa blanca grande (punto 3).
+  // A la izquierda de la línea roja la playa sigue, pero no se puede entrar (Z).
+  // Suelos propios: m mar, R roca volcánica, k pedregal, c caminito, u cuesta, Z arena que no se pisa.
+  playa: {
+    name: "La playa",
+    base: "sand", // bajo palmeras, muros y carteles hay arena, no hierba
+    tiles: [
+      'mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm',
+      'mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm',
+      'mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm',
+      'mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm',
+      'mmmmmmmmmmmmmmmmmmmmmmmmmmRRmmmmmmmmmmmm',
+      'mmmmmmmmmmmmmmmmRRRRRRRRRRRRRRRRRRmmmmmm',
+      'mmmmmmmmmmmmmmRRRRRRRRRRRRRRRRRRRRRRRmmm',
+      'mmmmmmmmmmmmmRRRuuukkkkkkkkkkkkkkkkRRRRR',
+      'mmmmmmmmmmmRRRRRuuuccckkkkkkkkkkkkkRRRRR',
+      'mmmRmmmmmRRRRRRRuuukkckkkkkkkkkkkkkRRRRR',
+      'mmmRRmmmRRRRRRRuuukkkcccckkkkkkkkkkRRRRR',
+      'mmmmmmmmmRRRRRuuukkkkkkkckkkkkkkkkkRRRRR',
+      'mmmmmmmmmmmmmuuukkkkkkkkckkkkkkkkkkRRRRR',
+      'mmmmmmmmmmmmzzzzszkkkkkkckkkkkkkkkkRRRRR',
+      'mmmmmmmmmmmzzzzzzzzkkkkkckkkkkkkkkkRRRRR',
+      'mmmmmmmmZZzzzzzzzzzzzkkkckkkkkkkkkkkkkYk',
+      'mmmmZZZZZZZzzzzzzzzzzzkkckkkkkkkkkkYkkkk',
+      'mZZZZZZZZZZzzzzzzzzzzzzzkkkkkkkkkkkkkkkk',
+      'ZZZZZZZZZZZZzzzzzzzzzzzzzkkkkkkkkkkkkYkk',
+      'ZZZZZZZZZZZZzzzzzzzzzzzzzzkkkkkkkkkkkkkk',
+      'ZZZZZZZZZZZZZzzzzzzzzzzzzzzwzzzzzzzzzzzz',
+      'wwwwwwwwwwwwwwwwwwwzzzzzzzzwzzzzzzYzzzYz',
+      'zzzzzzYzzYzzzzzbzzwzzzzzzzzwzYzzbzzzzzzz',
+      'zzYzYzzzzzzbzzYzzYwzzzzzzzzwzzzzzzzzzbzz',
+      'zzzzzzzzYzYzYzzzzzwzzzzzzzzwzzzYzzzzYzzz',
+      'zYzzYzzbzzzzzzzYzzwzzzzzzzzwzzzzzzzzzzzz',
+      'zzzzzzzzzzzYzbzzzbwzzzzzzzzwzYzzzzzbzzzz',
+      'zzzYzzzzzzzzzzzzYzwzzzzzzzzwzzzzzYzzzYzz',
+      'zYzzzzzzzzzzzYzzzzwzzzzzzzzwzzzzzzzzzzzz',
+      'wwwwwwwwwwwwwwwwwwwzzzzzzzzwwwwwwwwwwwww',
+      '---------------------Y------------------',
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      '----------------------------------------',
+      'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww',
+      'zYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzz',
+    ],
+    houses: [
+      // dentro del recinto de las palmeras asoma un chalé de tejado rojo
+      { x: 5, y: 26, w: 5, h: 3, roof: "#c8553d", wall: "#f3eee4" },
+      // la casa blanca grande del punto 3; el caminito llega a su puerta por la izquierda
+      {
+        x: 25,
+        y: 13,
+        w: 9,
+        h: 6,
+        style: "med",
+        face: "left",
+        locked: [
+          { text: "Una casa blanca enorme, con el mar entero de jardín." },
+          { text: "Llamas. Nadie contesta. Solo se oyen las olas." },
+        ],
+      },
+    ],
+    furniture: [
+      { type: "carcrash", x: 19, y: 30 },
+      // conos de obra: la carretera está cortada a izquierda y derecha
+      ...[30, 31, 32, 33].flatMap((y) => [
+        { type: "cone", x: 9, y },
+        { type: "cone", x: 30, y },
+      ]),
+    ],
+    decor: [{ type: "smoke", x: 20, y: 30 }],
+    playerStart: { x: 18, y: 30, dir: "right" },
+    signs: {
+      ...area(19, 30, 2, 1, [
+        { text: "El descapotable ha quedado empotrado contra la palmera. Del capó sale un humo que no huele nada bien." },
+        { who: "kael", text: "Bueno... el monstruo ha quedado peor. Creo." },
+      ]),
+      "21,30": [{ text: "La palmera ni se ha inmutado. Ella ha ganado." }],
+      ...area(9, 30, 1, 4, [{ text: "Conos de obra. La carretera está cortada por aquí." }]),
+      ...area(30, 30, 1, 4, [{ text: "Conos de obra. La carretera está cortada por aquí." }]),
+      ...area(18, 21, 1, 8, [
+        { text: "Un muro blanco. Detrás hay tantas palmeras que no se ve nada." },
+      ]),
+      ...area(13, 21, 5, 1, [
+        { text: "Un muro blanco. Detrás hay tantas palmeras que no se ve nada." },
+      ]),
+      ...area(27, 20, 1, 9, [
+        { text: "Al otro lado del muro hay un jardín con palmeras. Y un cartel de «Propiedad privada»." },
+      ]),
+      "16,13": [
+        { text: "«Antigua entrada de abastecimiento»." },
+        { text: "Al lado, una cuesta de arenisca sube hacia las rocas." },
+      ],
+      ...area(12, 12, 1, 1, [{ text: "El agua está fría y transparente. Hasta aquí llega la playa." }]),
+      ...area(11, 13, 1, 1, [{ text: "El agua está fría y transparente. Hasta aquí llega la playa." }]),
+      ...area(10, 14, 1, 1, [{ text: "El agua está fría y transparente. Hasta aquí llega la playa." }]),
+      ...area(16, 6, 3, 1, [
+        { text: "Desde aquí arriba se ve todo el mar. Las olas rompen contra las rocas negras." },
+      ]),
+      ...area(15, 7, 1, 2, [{ text: "Rocas negras, resbaladizas. Mejor no." }]),
     },
   },
 };
@@ -721,6 +963,26 @@ const STORY = {
       },
     ],
   },
+  // Tras la batalla: el coche acaba empotrado contra una palmera junto a la playa (punto 1).
+  playa: {
+    map: "playa",
+    spawn: { x: 18, y: 30, dir: "right" },
+    steps: [
+      { dark: 1 },
+      { wait: 40 },
+      { sfx: "boom" },
+      { wait: 100 },
+      { fade: 0, frames: 150 },
+      { wait: 30 },
+      {
+        say: [
+          { text: "El descapotable acaba su carrera contra una palmera, justo al lado de la playa." },
+          { who: "kael", mood: "surprised", text: "...Sigo vivo. Creo." },
+          { who: "kael", text: "Huele a mar. ¿Dónde narices he acabado?" },
+        ],
+      },
+    ],
+  },
 };
 
 /*
@@ -735,7 +997,7 @@ const LEVELS = [
   { name: "La casa", map: "casa" },
   { name: "El patio", map: "urba" },
   { name: "La batalla contra el monstruo", minigame: "chase" },
-  { name: "La playa", soon: true },
+  { name: "La playa", story: "playa" },
 ];
 
 // Batalla en coche contra el monstruo (js/battle.js y js/chasetop.js).
@@ -766,7 +1028,7 @@ const CREDITS = [
   { t: "Nunito" },
   {},
   { h: "Reparto" },
-  { t: "Anthon · Dominik · Vives · Muha · Diego" },
+  { t: "Anthon · Dominik · Vives · Muha · Diego · Oscar · Tymen · Ricardo · Mark · Jamie · Carol · Owen" },
   { t: "y un rosal deprimido" },
   {},
   {},

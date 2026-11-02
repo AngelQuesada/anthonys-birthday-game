@@ -7,7 +7,7 @@
   const FONT = '"Nunito", "Segoe UI", sans-serif';
   const TEXT_FONT = `700 28px ${FONT}`;
   const TEXT_SPEED = 0.7; // caracteres por frame
-  const SOLID = new Set(['T', 'b', 'r', 'f', 's', '~', 'X', 'W', 'h', 'g', 'n', 'P', 'w', ' ']);
+  const SOLID = new Set(['T', 'b', 'r', 'f', 's', '~', 'X', 'W', 'h', 'g', 'n', 'P', 'w', ' ', 'Y', 'm', 'Z', 'k', 'R']);
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
@@ -106,7 +106,7 @@
       id, def, w, h, solid, doors,
       // la cama de las cinemáticas: la marcada con `sleep: true` o, si no hay, la primera de tipo 'bed'
       bed: furniture.find(f => f.sleep) || furniture.find(f => f.type === 'bed'),
-      ground: room ? [room, room, room] : [0, 1, 2].map(f => Art.ground(def.tiles, f, furniture)),
+      ground: room ? [room, room, room] : [0, 1, 2].map(f => Art.ground(def.tiles, f, furniture, def.base)),
       statics: Art.buildStatics(def, furniture),
       npcs: (def.npcs || []).map(n => makeEntity(n.char, n.x, n.y, n.dir, n)),
     };
@@ -622,6 +622,19 @@
       wctx.fillStyle = '#2b1d16'; wctx.fillRect(bx - 1, by - 2, 4, 5);
       wctx.fillStyle = '#e04a4a'; wctx.fillRect(bx, by - 1, 2, 2);
       wctx.fillStyle = '#ffffff'; wctx.fillRect(bx, by + 1, 2, 1);
+    } else if (dc.type === 'smoke' && top) {
+      // humo que sale del capó: bocanadas grises que suben, crecen y se desvanecen
+      for (let i = 0; i < 6; i++) {
+        const k = ((G.t + i * 23) % 140) / 140;
+        const x = dc.x * T + 8 + Math.sin(G.t / 30 + i * 2) * 3 + k * 10 - camX;
+        const y = dc.y * T + 4 - k * 34 - camY;
+        const r = 3 + k * 6;
+        const v = k < 0.3 ? 60 : 120;
+        wctx.fillStyle = `rgba(${v},${v - 2},${v + 2},${0.9 * (1 - k)})`;
+        wctx.beginPath();
+        wctx.arc(Math.round(x), Math.round(y), r, 0, Math.PI * 2);
+        wctx.fill();
+      }
     } else if (dc.type === 'arrow' && !top) {
       wctx.drawImage(Art.arrow(dc.dir), dc.x * T - camX, dc.y * T - camY);
     } else if (dc.type === 'bunting' && top) {
@@ -920,8 +933,11 @@
     if (G.banner > 0 && G.scene === 'play') {
       const a = Math.min(1, G.banner / 30, (200 - G.banner) / 20);
       ctx.globalAlpha = Math.max(0, a);
-      panel(24, 24, 300, 70, true);
-      text(G.world.def.name, 174, 60, { size: 30, align: 'center', color: '#ffe28a', weight: 700 });
+      ctx.font = `700 30px ${FONT}`;
+      const bw = 420;
+      const fs = Math.min(30, Math.floor(30 * (bw - 50) / ctx.measureText(G.world.def.name).width));
+      panel(24, 24, bw, 70, true);
+      text(G.world.def.name, 24 + bw / 2, 60, { size: fs, align: 'center', color: '#ffe28a', weight: 700 });
       ctx.globalAlpha = 1;
     }
     if (G.scene === 'play' || G.scene === 'dialog') drawGuestCounter();
@@ -943,7 +959,7 @@
     const d = G.dialog;
     const box = { x: 20, y: 516, w: 920, h: 188 };
     const e = 1 - Math.pow(1 - d.anim, 3);
-    const accent = d.ch ? d.ch.shirt : '#ffd45e';
+    const accent = (d.ch && d.ch.shirt) || '#ffd45e';
 
     // Cuadro claro y plano: fondo crema, borde grueso y sombra sólida del color del personaje.
     ctx.save();
@@ -1105,16 +1121,16 @@
   function boot() {
     resize();
     addEventListener('resize', resize);
-    // TEMPORAL: sin menús, el juego arranca directamente en una zona abierta del parque de la urbanización.
-    const startAtPool = () => {
-      G.restart = startAtPool;
+    // TEMPORAL: sin menús, el juego arranca directamente en una zona abierta del parque de la urbanización para probar personajes.
+    const startAtPark = () => {
+      G.restart = startAtPark;
       G.visited = new Set();
       G.flags = new Set();
       G.greeted = new Set();
       enterMap('urba', 36, 20, 'down', false);
       startTestChat();
     };
-    startAtPool();
+    startAtPark();
     if (location.search.includes('debug')) window.__G = G;
     requestAnimationFrame(frame);
   }
