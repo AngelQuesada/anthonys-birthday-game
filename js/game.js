@@ -484,6 +484,9 @@
   function update() {
     G.t++;
     if (G.scene !== 'minigame') Sfx.engine(false);
+    // música de la fase 1: en casa y patio; en pausa baja de volumen pero no se corta
+    const sc = G.scene === 'pause' ? G.prevScene : G.scene;
+    Sfx.music(['play', 'dialog', 'cutscene'].includes(sc) && !!G.world && MUSIC_MAPS.has(G.world.id), G.scene === 'pause');
     const f = G.fade;
     if (f.target === 1) {
       f.a = Math.min(1, f.a + 0.06);

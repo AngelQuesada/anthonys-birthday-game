@@ -142,8 +142,28 @@ const CHATS = {
     ]
   },
   "Keziah": {
-    "images": {},
-    "lines": []
+    "images": {
+      "base": "characters/Keziah/base.png",
+      "happy": "characters/Keziah/happy.png"
+    },
+    "lines": [
+      {
+        "image": "base",
+        "text": "Hi Uncle Anthon"
+      },
+      {
+        "image": "happy",
+        "text": "Happy birthday to the best uncle ever who saves me twice a year by coming to home."
+      },
+      {
+        "image": "base",
+        "text": "I hope you have the best day and I'm so glad you're always proud of me"
+      },
+      {
+        "image": "base",
+        "text": "I'm proud of you too."
+      }
+    ]
   },
   "Mark": {
     "images": {

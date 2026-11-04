@@ -200,6 +200,22 @@ const CHARACTERS = {
       happy: "characters/Owen/happy.png",
     },
   },
+  keziah: {
+    id: "keziah",
+    name: "Keziah",
+    voice: 1.1,
+    skin: "#fcccaa",
+    hair: "#6b422a",
+    hairStyle: "long",
+    shirt: "#9c4b28",
+    pants: "#c9a07b",
+    eyes: "#4a3022",
+    portraits: {
+      normal: "characters/Keziah/base.png",
+      base: "characters/Keziah/base.png",
+      happy: "characters/Keziah/happy.png",
+    },
+  },
 };
 
 // El protagonista siempre sale a la derecha en los diálogos.
@@ -219,9 +235,10 @@ const GUESTS = [
   { chat: "Jamie", char: "jamie" },
   { chat: "Carol", char: "carol" },
   { chat: "Owen", char: "owen" },
+  { chat: "Keziah", char: "keziah" },
 ];
 // Invitado en pruebas: nada más cargar aparece delante de Anthon y suelta su chat. Los demás esperan a su lado.
-const TEST_CHAT = "owen";
+const TEST_CHAT = "keziah";
 
 /*
  * Leyenda del mapa:
@@ -286,7 +303,8 @@ function adosadosColumna(x, y, n, face) {
 // Mismas líneas para todas las casillas de un rectángulo (muebles grandes): ...area(x, y, w, h, líneas) en `signs`.
 function area(x, y, w, h, lines) {
   const out = {};
-  for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) out[`${i},${j}`] = lines;
+  for (let j = y; j < y + h; j++)
+    for (let i = x; i < x + w; i++) out[`${i},${j}`] = lines;
   return out;
 }
 
@@ -459,16 +477,33 @@ const MAPS = {
     signs: {
       // dormitorio grande
       ...area(16, 4, 4, 3, [
-        { who: "kael", text: "Todavía está calentita... No. Fuerza de voluntad." },
+        {
+          who: "kael",
+          text: "Todavía está calentita... No. Fuerza de voluntad.",
+        },
       ]),
       ...area(19, 3, 1, 1, [
         { text: "El despertador marca las once y media." },
-        { who: "kael", mood: "surprised", text: "...Lo he vuelto a apagar sin despertarme." },
+        {
+          who: "kael",
+          mood: "surprised",
+          text: "...Lo he vuelto a apagar sin despertarme.",
+        },
       ]),
-      ...area(19, 7, 1, 1, [{ text: "Otra mesita con otro despertador. Este ni siquiera tiene pilas." }]),
-      ...area(8, 4, 1, 3, [{ text: "Una mesa con una lámpara y un montón de libros que nadie ha terminado." }]),
+      ...area(19, 7, 1, 1, [
+        {
+          text: "Otra mesita con otro despertador. Este ni siquiera tiene pilas.",
+        },
+      ]),
+      ...area(8, 4, 1, 3, [
+        {
+          text: "Una mesa con una lámpara y un montón de libros que nadie ha terminado.",
+        },
+      ]),
       "9,2": [
-        { text: "Un calendario. Hay un día marcado con un círculo rojo enorme." },
+        {
+          text: "Un calendario. Hay un día marcado con un círculo rojo enorme.",
+        },
         { who: "kael", text: "Tengo la sensación de que se me olvida algo..." },
       ],
       ...area(11, 2, 4, 1, [
@@ -478,51 +513,95 @@ const MAPS = {
       // cuarto pequeño
       ...area(2, 2, 2, 1, [{ text: "Hace un día precioso ahí fuera." }]),
       ...area(5, 3, 2, 3, [
-        { text: "Una cama perfectamente hecha. Aquí no ha dormido nadie... o alguien muy ordenado." },
+        {
+          text: "Una cama perfectamente hecha. Aquí no ha dormido nadie... o alguien muy ordenado.",
+        },
       ]),
       ...area(1, 7, 1, 2, [
-        { text: "El ordenador está en suspensión. En la pantalla hay una nota: «¡No olvides lo de hoy!»." },
-        { who: "kael", mood: "surprised", text: "¿Lo de hoy? ¿Qué es lo de hoy?" },
+        {
+          text: "El ordenador está en suspensión. En la pantalla hay una nota: «¡No olvides lo de hoy!».",
+        },
+        {
+          who: "kael",
+          mood: "surprised",
+          text: "¿Lo de hoy? ¿Qué es lo de hoy?",
+        },
       ]),
-      ...area(1, 10, 1, 2, [{ text: "Una partida a medias. Mejor no tocar nada si quieres seguir vivo." }]),
+      ...area(1, 10, 1, 2, [
+        {
+          text: "Una partida a medias. Mejor no tocar nada si quieres seguir vivo.",
+        },
+      ]),
       // baño
       "15,10": [{ text: "Mejor no." }],
       "15,15": [
         { text: "Te miras en el espejo." },
-        { who: "kael", mood: "surprised", text: "Este pelo necesita ayuda profesional." },
+        {
+          who: "kael",
+          mood: "surprised",
+          text: "Este pelo necesita ayuda profesional.",
+        },
       ],
-      ...area(18, 10, 2, 4, [{ text: "La bañera. Un patito de goma te vigila en silencio." }]),
+      ...area(18, 10, 2, 4, [
+        { text: "La bañera. Un patito de goma te vigila en silencio." },
+      ]),
       // cocina
-      ...area(1, 16, 6, 1, [{ text: "La cocina está recogida. Sospechosamente recogida." }]),
+      ...area(1, 16, 6, 1, [
+        { text: "La cocina está recogida. Sospechosamente recogida." },
+      ]),
       ...area(1, 17, 1, 2, [
-        { text: "Abres la nevera. Hay un hueco enorme, como si alguien se hubiera llevado algo muy grande." },
+        {
+          text: "Abres la nevera. Hay un hueco enorme, como si alguien se hubiera llevado algo muy grande.",
+        },
         { who: "kael", text: "...¿Y mi yogur?" },
       ]),
       ...area(1, 19, 6, 1, [
-        { text: "Hay una lista en la encimera: «globos, velas, confeti...». El resto está tachado." },
+        {
+          text: "Hay una lista en la encimera: «globos, velas, confeti...». El resto está tachado.",
+        },
       ]),
       // cuarto de las dos camas
       ...area(13, 18, 7, 1, [
         { text: "El armario empotrado. Está tan lleno que da miedo abrirlo." },
         { who: "kael", text: "Mejor dejarlo así. Por la seguridad de todos." },
       ]),
-      ...area(19, 20, 1, 2, [{ text: "Un montón de ropa doblada. Bueno, «doblada»." }]),
-      ...area(13, 23, 2, 3, [{ text: "La cama está vacía. Qué silencio hay hoy en casa..." }]),
-      ...area(18, 23, 2, 3, [{ text: "La cama está vacía. Qué silencio hay hoy en casa..." }]),
-      ...area(15, 26, 3, 1, [{ text: "Por la ventana se ve el patio. Ni un alma." }]),
+      ...area(19, 20, 1, 2, [
+        { text: "Un montón de ropa doblada. Bueno, «doblada»." },
+      ]),
+      ...area(13, 23, 2, 3, [
+        { text: "La cama está vacía. Qué silencio hay hoy en casa..." },
+      ]),
+      ...area(18, 23, 2, 3, [
+        { text: "La cama está vacía. Qué silencio hay hoy en casa..." },
+      ]),
+      ...area(15, 26, 3, 1, [
+        { text: "Por la ventana se ve el patio. Ni un alma." },
+      ]),
       // salón
       ...area(1, 20, 6, 2, [
-        { text: "El sofá. Tiene la forma exacta de alguien que se pasó aquí todo el domingo." },
+        {
+          text: "El sofá. Tiene la forma exacta de alguien que se pasó aquí todo el domingo.",
+        },
       ]),
       ...area(1, 22, 2, 5, [
-        { text: "El sofá. Tiene la forma exacta de alguien que se pasó aquí todo el domingo." },
+        {
+          text: "El sofá. Tiene la forma exacta de alguien que se pasó aquí todo el domingo.",
+        },
       ]),
-      ...area(4, 23, 1, 3, [{ text: "El mando de la tele. Le faltan las pilas, como siempre." }]),
+      ...area(4, 23, 1, 3, [
+        { text: "El mando de la tele. Le faltan las pilas, como siempre." },
+      ]),
       ...area(11, 22, 1, 3, [
-        { text: "La tele está apagada. En el reflejo se ve a alguien despeinado..." },
+        {
+          text: "La tele está apagada. En el reflejo se ve a alguien despeinado...",
+        },
         { who: "kael", text: "Ah, que soy yo." },
       ]),
-      ...area(5, 33, 7, 1, [{ text: "La terraza del salón. Está cerrada, pero entra una luz muy bonita." }]),
+      ...area(5, 33, 7, 1, [
+        {
+          text: "La terraza del salón. Está cerrada, pero entra una luz muy bonita.",
+        },
+      ]),
     },
   },
 
@@ -533,100 +612,100 @@ const MAPS = {
   urba: {
     name: "Condado de Alhama Residential Area",
     tiles: [
-      'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
-      'TaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaT',
-      'TaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaT',
-      'T------------------------------------------------------------------------T',
-      'T..........................=...................=..............-.........-T',
-      'T.Y........................=...................=..,..w:::.....-w:::.....-T',
-      'T.....,.........T..........=..........,........=.....::::.....-::::.....-T',
-      'T.,......T...,.........Y...=........,..........=.....wwww.....-wwww.....-T',
-      'T..........................=w....bw....b::::::w=,....w:::.....-w:::.....-T',
-      'T,........Y.Y...T..........=w.....w.....::::::w=.,...::::.....-::::.....-T',
-      'T....T........,............=w.....w.....w:::::w=..,..wwww.....-wwww.....-T',
-      'T..........................=w.....w.....w:::::w=.,...w:::.....-w:::.....-T',
-      'T..........................=wb....wb....w:::::w=.....::::.....-::::.,...-T',
-      'T.Y.....Y......Y...........=www.wwwww.wwwg:wwww=.....wwww.....-wwww.....-T',
-      'T.....,....Y.,.............=...............g...=.....w:::.....-w:::.....-T',
-      'T........Y.................=...........g.......=.....::::.....-::::.....-T',
-      'T.....................======..................======.wwww.....-wwww.....-T',
-      'T---------------------=........Y...................=---------------------T',
-      'T-w::..........::::w..=.....Y...............Y......=.w:::.....-w:::.....-T',
-      'T-:::........,.:::::..=..................T.........=.::::.....-::::.....-T',
-      'T-www..........wwwww..=............................=.wwww.....-wwww.....-T',
-      'T-w::..........::::w..=..Y..Y.Y...........Y.....b..=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=............................=.::::.....-::::.....-T',
-      'T-www..........wwwww..=..T.........................=.wwww.....-wwww.,...-T',
-      'T-w::..........::::w..=......T..........,.Y..Y.....=.w:::.....-w:::...,.-T',
-      'T-:::..........:::::..=..........T.................=.::::.....-::::.....-T',
-      'T-www..........wwwww..=......Y............Y..Y.Y.b.=.wwww.....-wwww.....-T',
-      'T-w::..........::::w..=..b.....Y...................=.w:::.....-w:::.....-T',
-      'T-:::.,.,......:::::..=....Y.............Y...Y..Y..=.::::.....-::::.....-T',
-      'T-www..........wwwww..=............g.......Y.......=.wwww.....-wwww.....-T',
-      'T---------------------=....,..Y..............T.....=---------------------T',
-      'T-w::..........::::w..=..........Y......Y.Y........=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=.....................T......=.::::.....-::::.....-T',
-      'T-www..........wwwww..=..................Y......T..=.wwww.....-wwww.,...-T',
-      'T-w::..........::::w..=...Y..Y...............Y.....=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=..........Y.......Y.........=.::::...,.-::::.....-T',
-      'T-www..,,......wwwww..=.....Y.Y.......g....Y.......=.wwww.....-wwww.....-T',
-      'T-w::..........::::w..=...Y........................=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=.....Y...b............T.....=.::::.....-::::.....-T',
-      'T-www..........wwwww..=.........................Y..=.wwww.....-wwww..,..-T',
-      'T-w::..........::::w..=.................Y..........=.w:::.,...-w:::.....-T',
-      'T-:::..........:::::..=...................Y........=.::::.....-::::.....-T',
-      'T-www..........wwwww..=........Y...g....Y....Y.....=.wwww.....-wwww.....-T',
-      'T---------------------=.....b.............T........=---------------------T',
-      'T-w::..........::::w..=.......Y.............,...Y.n=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=............g..g............=.::::...,.-::::.....-T',
-      'T-www..........wwwww..=......hhhhhhh::hhhhhhh.,....=.wwww.....-wwww.....-T',
-      'T-w::..........::::w..=......h::::::::::::::h......=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=......h::::::::::::::h..Y...=.::::.....-::::.....-T',
-      'T-www...,......wwwww..=..Y.Y.h:PPPPPPPPPP:::h......=.wwww.....-wwww.....-T',
-      'T-w::.,.,,.....::::w..=......h:PPPPPPPPPP:::h......=.w:::.....-w:::.....-T',
-      'T-:::....,.....:::::..=..Y...h:PPPPPPPPPP:::h......=.::::.....-::::.....-T',
-      'T-www..........wwwww..=......h:PPPPPPPPPP:::h......=.wwww.....-wwww.....-T',
-      'T-w::..........::::w..=.T....h:PPPPPPPPPP:::h......=.w:::.....-w:::.....-T',
-      'T-:::..,.......:::::..=......h:PPPPPPPPPP:::h......=.::::.....-::::...,.-T',
-      'T-www..........wwwww..=......h:PPPPPPPPPP:::h....Y.=.wwww.....-wwww.....-T',
-      'T---------------------=..b...h:PPPPPPP::::::h......=---------------------T',
-      'T-w::..........::::w..=......h:PPPPPPP::::::h...Y..=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=..Y...h:PPPPPPP::::::h......=.::::...,.-::::.....-T',
-      'T-www..........wwwww..=......h:PPPPPPP::::::h......=.wwww.....-wwww..,..-T',
-      'T-w::..........::::w..=..Y...h:PPPPPPP::::::h......=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=......h:PPPPPPP::::::h......=.::::.....-::::.....-T',
-      'T-www..........wwwww..=......h:PPPPPPP::::::h..b...=.wwww.....-wwww.....-T',
-      'T-w::.....,....::::w..=......h:PPPPPPP::::::h......=.w:::.....-w:::.....-T',
-      'T-:::........,.:::::..=......h:PPPPPPP::::::h......=.::::.....-::::.....-T',
-      'T-www..........wwwww..=...b..h:PPPPPPP::::::h......=.wwww.....-wwww.....-T',
-      'T-w::..........::::w..=......h:PPPPPPP::::::h..b...=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=..Y.b.h:PPPPPPP::::::h......=.::::.....-::::...,.-T',
-      'T-www..........wwwww..=......h::::::::::::::h....Y.=.wwww.....-wwww.....-T',
-      'T---------------------=......hhhhhhhhhhhhhhhh......=---------------------T',
-      'T-w::..........::::w..=............................=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=........,..........b.....Y..=.::::.....-::::.....-T',
-      'T-www..........wwwww..=............................=.wwww.....-wwww.....-T',
-      'T-w::..........::::w..=....,.......................=.w:::.....-w:::.,.,.-T',
-      'T-:::...,,.....:::::..=..Y............b....,.....Y.=.::::.....-::::...,.-T',
-      'T-www..........wwwww..=.......b..........b.........=.wwww.....-wwww.....-T',
-      'T-w::..........::::w..=.......................,....=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=....Y.......T...T...........=.::::.....-::::.....-T',
-      'T-www..........wwwww..=..Y....Y..T...,.....Y.....Y.=.wwww.....-wwww.....-T',
-      'T-w::........,.::::w..=.....,............b...b.....=.w:::.....-w:::.....-T',
-      'T-:::.......,..:::::..=................Y........Y..=.::::..,..-::::.....-T',
-      'T-www..........wwwww..=.............n.......Y......=.wwww.....-wwww.....-T',
-      'T---------------------=.Y...Y.zzzzzzzzzzzzz........=---------------------T',
-      'T-w::..........::::w..=.......zzzzzzzzzzzzz......Y.=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=.......zzzzzzzzzzzzz..Y.....=.::::.....-::::.....-T',
-      'T-www..........wwwww..=.......zzzzzzzzzzzzz.....b..=.wwww.....-wwww.....-T',
-      'T-w::..........::::w..=.......zzzzzzzzzzzzz.,......=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=.......zzzzzzzzzzzzz........=.::::.....-::::...,.-T',
-      'T-www..........wwwww..=.......zzzzzzzzzzzzz........=.wwww.....-wwww...,.-T',
-      'T-w::..........::::w..=...Y..................T.....=.w:::.....-w:::.....-T',
-      'T-:::..........:::::..=...................Y........=.::::.....-::::.....-T',
-      'T-www..........wwwww..=.............b...........Y..=.wwww.....-wwww.....-T',
-      'T-....................=............................=..........-.........-T',
-      'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT',
+      "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+      "TaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaT",
+      "TaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaT",
+      "T------------------------------------------------------------------------T",
+      "T..........................=...................=..............-.........-T",
+      "T.Y........................=...................=..,..w:::.....-w:::.....-T",
+      "T.....,.........T..........=..........,........=.....::::.....-::::.....-T",
+      "T.,......T...,.........Y...=........,..........=.....wwww.....-wwww.....-T",
+      "T..........................=w....bw....b::::::w=,....w:::.....-w:::.....-T",
+      "T,........Y.Y...T..........=w.....w.....::::::w=.,...::::.....-::::.....-T",
+      "T....T........,............=w.....w.....w:::::w=..,..wwww.....-wwww.....-T",
+      "T..........................=w.....w.....w:::::w=.,...w:::.....-w:::.....-T",
+      "T..........................=wb....wb....w:::::w=.....::::.....-::::.,...-T",
+      "T.Y.....Y......Y...........=www.wwwww.wwwg:wwww=.....wwww.....-wwww.....-T",
+      "T.....,....Y.,.............=...............g...=.....w:::.....-w:::.....-T",
+      "T........Y.................=...........g.......=.....::::.....-::::.....-T",
+      "T.....................======..................======.wwww.....-wwww.....-T",
+      "T---------------------=........Y...................=---------------------T",
+      "T-w::..........::::w..=.....Y...............Y......=.w:::.....-w:::.....-T",
+      "T-:::........,.:::::..=..................T.........=.::::.....-::::.....-T",
+      "T-www..........wwwww..=............................=.wwww.....-wwww.....-T",
+      "T-w::..........::::w..=..Y..Y.Y...........Y.....b..=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=............................=.::::.....-::::.....-T",
+      "T-www..........wwwww..=..T.........................=.wwww.....-wwww.,...-T",
+      "T-w::..........::::w..=......T..........,.Y..Y.....=.w:::.....-w:::...,.-T",
+      "T-:::..........:::::..=..........T.................=.::::.....-::::.....-T",
+      "T-www..........wwwww..=......Y............Y..Y.Y.b.=.wwww.....-wwww.....-T",
+      "T-w::..........::::w..=..b.....Y...................=.w:::.....-w:::.....-T",
+      "T-:::.,.,......:::::..=....Y.............Y...Y..Y..=.::::.....-::::.....-T",
+      "T-www..........wwwww..=............g.......Y.......=.wwww.....-wwww.....-T",
+      "T---------------------=....,..Y..............T.....=---------------------T",
+      "T-w::..........::::w..=..........Y......Y.Y........=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=.....................T......=.::::.....-::::.....-T",
+      "T-www..........wwwww..=..................Y......T..=.wwww.....-wwww.,...-T",
+      "T-w::..........::::w..=...Y..Y...............Y.....=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=..........Y.......Y.........=.::::...,.-::::.....-T",
+      "T-www..,,......wwwww..=.....Y.Y.......g....Y.......=.wwww.....-wwww.....-T",
+      "T-w::..........::::w..=...Y........................=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=.....Y...b............T.....=.::::.....-::::.....-T",
+      "T-www..........wwwww..=.........................Y..=.wwww.....-wwww..,..-T",
+      "T-w::..........::::w..=.................Y..........=.w:::.,...-w:::.....-T",
+      "T-:::..........:::::..=...................Y........=.::::.....-::::.....-T",
+      "T-www..........wwwww..=........Y...g....Y....Y.....=.wwww.....-wwww.....-T",
+      "T---------------------=.....b.............T........=---------------------T",
+      "T-w::..........::::w..=.......Y.............,...Y.n=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=............g..g............=.::::...,.-::::.....-T",
+      "T-www..........wwwww..=......hhhhhhh::hhhhhhh.,....=.wwww.....-wwww.....-T",
+      "T-w::..........::::w..=......h::::::::::::::h......=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=......h::::::::::::::h..Y...=.::::.....-::::.....-T",
+      "T-www...,......wwwww..=..Y.Y.h:PPPPPPPPPP:::h......=.wwww.....-wwww.....-T",
+      "T-w::.,.,,.....::::w..=......h:PPPPPPPPPP:::h......=.w:::.....-w:::.....-T",
+      "T-:::....,.....:::::..=..Y...h:PPPPPPPPPP:::h......=.::::.....-::::.....-T",
+      "T-www..........wwwww..=......h:PPPPPPPPPP:::h......=.wwww.....-wwww.....-T",
+      "T-w::..........::::w..=.T....h:PPPPPPPPPP:::h......=.w:::.....-w:::.....-T",
+      "T-:::..,.......:::::..=......h:PPPPPPPPPP:::h......=.::::.....-::::...,.-T",
+      "T-www..........wwwww..=......h:PPPPPPPPPP:::h....Y.=.wwww.....-wwww.....-T",
+      "T---------------------=..b...h:PPPPPPP::::::h......=---------------------T",
+      "T-w::..........::::w..=......h:PPPPPPP::::::h...Y..=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=..Y...h:PPPPPPP::::::h......=.::::...,.-::::.....-T",
+      "T-www..........wwwww..=......h:PPPPPPP::::::h......=.wwww.....-wwww..,..-T",
+      "T-w::..........::::w..=..Y...h:PPPPPPP::::::h......=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=......h:PPPPPPP::::::h......=.::::.....-::::.....-T",
+      "T-www..........wwwww..=......h:PPPPPPP::::::h..b...=.wwww.....-wwww.....-T",
+      "T-w::.....,....::::w..=......h:PPPPPPP::::::h......=.w:::.....-w:::.....-T",
+      "T-:::........,.:::::..=......h:PPPPPPP::::::h......=.::::.....-::::.....-T",
+      "T-www..........wwwww..=...b..h:PPPPPPP::::::h......=.wwww.....-wwww.....-T",
+      "T-w::..........::::w..=......h:PPPPPPP::::::h..b...=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=..Y.b.h:PPPPPPP::::::h......=.::::.....-::::...,.-T",
+      "T-www..........wwwww..=......h::::::::::::::h....Y.=.wwww.....-wwww.....-T",
+      "T---------------------=......hhhhhhhhhhhhhhhh......=---------------------T",
+      "T-w::..........::::w..=............................=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=........,..........b.....Y..=.::::.....-::::.....-T",
+      "T-www..........wwwww..=............................=.wwww.....-wwww.....-T",
+      "T-w::..........::::w..=....,.......................=.w:::.....-w:::.,.,.-T",
+      "T-:::...,,.....:::::..=..Y............b....,.....Y.=.::::.....-::::...,.-T",
+      "T-www..........wwwww..=.......b..........b.........=.wwww.....-wwww.....-T",
+      "T-w::..........::::w..=.......................,....=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=....Y.......T...T...........=.::::.....-::::.....-T",
+      "T-www..........wwwww..=..Y....Y..T...,.....Y.....Y.=.wwww.....-wwww.....-T",
+      "T-w::........,.::::w..=.....,............b...b.....=.w:::.....-w:::.....-T",
+      "T-:::.......,..:::::..=................Y........Y..=.::::..,..-::::.....-T",
+      "T-www..........wwwww..=.............n.......Y......=.wwww.....-wwww.....-T",
+      "T---------------------=.Y...Y.zzzzzzzzzzzzz........=---------------------T",
+      "T-w::..........::::w..=.......zzzzzzzzzzzzz......Y.=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=.......zzzzzzzzzzzzz..Y.....=.::::.....-::::.....-T",
+      "T-www..........wwwww..=.......zzzzzzzzzzzzz.....b..=.wwww.....-wwww.....-T",
+      "T-w::..........::::w..=.......zzzzzzzzzzzzz.,......=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=.......zzzzzzzzzzzzz........=.::::.....-::::...,.-T",
+      "T-www..........wwwww..=.......zzzzzzzzzzzzz........=.wwww.....-wwww...,.-T",
+      "T-w::..........::::w..=...Y..................T.....=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=...................Y........=.::::.....-::::.....-T",
+      "T-www..........wwwww..=.............b...........Y..=.wwww.....-wwww.....-T",
+      "T-....................=............................=..........-.........-T",
+      "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     ],
     houses: [
       // la nuestra es la de la derecha. Como en el plano de dentro, el salón sobresale hacia el patio
@@ -773,7 +852,9 @@ const MAPS = {
         { who: "kael", text: "¿Qué estará pasando ahí dentro?" },
       ],
       ...area(41, 9, 2, 1, [
-        { text: "La puerta de la terraza del salón, vista desde fuera. Está cerrada." },
+        {
+          text: "La puerta de la terraza del salón, vista desde fuera. Está cerrada.",
+        },
       ]),
       "44,11": [
         { text: "La mesa del patio. Alguien ha dejado una limonada a medias." },
@@ -823,42 +904,42 @@ const MAPS = {
     name: "La playa",
     base: "sand", // bajo palmeras, muros y carteles hay arena, no hierba
     tiles: [
-      'mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm',
-      'mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm',
-      'mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm',
-      'mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm',
-      'mmmmmmmmmmmmmmmmmmmmmmmmmmRRmmmmmmmmmmmm',
-      'mmmmmmmmmmmmmmmmRRRRRRRRRRRRRRRRRRmmmmmm',
-      'mmmmmmmmmmmmmmRRRRRRRRRRRRRRRRRRRRRRRmmm',
-      'mmmmmmmmmmmmmRRRuuukkkkkkkkkkkkkkkkRRRRR',
-      'mmmmmmmmmmmRRRRRuuuccckkkkkkkkkkkkkRRRRR',
-      'mmmRmmmmmRRRRRRRuuukkckkkkkkkkkkkkkRRRRR',
-      'mmmRRmmmRRRRRRRuuukkkcccckkkkkkkkkkRRRRR',
-      'mmmmmmmmmRRRRRuuukkkkkkkckkkkkkkkkkRRRRR',
-      'mmmmmmmmmmmmmuuukkkkkkkkckkkkkkkkkkRRRRR',
-      'mmmmmmmmmmmmzzzzszkkkkkkckkkkkkkkkkRRRRR',
-      'mmmmmmmmmmmzzzzzzzzkkkkkckkkkkkkkkkRRRRR',
-      'mmmmmmmmZZzzzzzzzzzzzkkkckkkkkkkkkkkkkYk',
-      'mmmmZZZZZZZzzzzzzzzzzzkkckkkkkkkkkkYkkkk',
-      'mZZZZZZZZZZzzzzzzzzzzzzzkkkkkkkkkkkkkkkk',
-      'ZZZZZZZZZZZZzzzzzzzzzzzzzkkkkkkkkkkkkYkk',
-      'ZZZZZZZZZZZZzzzzzzzzzzzzzzkkkkkkkkkkkkkk',
-      'ZZZZZZZZZZZZZzzzzzzzzzzzzzzwzzzzzzzzzzzz',
-      'wwwwwwwwwwwwwwwwwwwzzzzzzzzwzzzzzzYzzzYz',
-      'zzzzzzYzzYzzzzzbzzwzzzzzzzzwzYzzbzzzzzzz',
-      'zzYzYzzzzzzbzzYzzYwzzzzzzzzwzzzzzzzzzbzz',
-      'zzzzzzzzYzYzYzzzzzwzzzzzzzzwzzzYzzzzYzzz',
-      'zYzzYzzbzzzzzzzYzzwzzzzzzzzwzzzzzzzzzzzz',
-      'zzzzzzzzzzzYzbzzzbwzzzzzzzzwzYzzzzzbzzzz',
-      'zzzYzzzzzzzzzzzzYzwzzzzzzzzwzzzzzYzzzYzz',
-      'zYzzzzzzzzzzzYzzzzwzzzzzzzzwzzzzzzzzzzzz',
-      'wwwwwwwwwwwwwwwwwwwzzzzzzzzwwwwwwwwwwwww',
-      '---------------------Y------------------',
-      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      '----------------------------------------',
-      'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww',
-      'zYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzz',
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmRRmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmRRRRRRRRRRRRRRRRRRmmmmmm",
+      "mmmmmmmmmmmmmmRRRRRRRRRRRRRRRRRRRRRRRmmm",
+      "mmmmmmmmmmmmmRRRuuukkkkkkkkkkkkkkkkRRRRR",
+      "mmmmmmmmmmmRRRRRuuuccckkkkkkkkkkkkkRRRRR",
+      "mmmRmmmmmRRRRRRRuuukkckkkkkkkkkkkkkRRRRR",
+      "mmmRRmmmRRRRRRRuuukkkcccckkkkkkkkkkRRRRR",
+      "mmmmmmmmmRRRRRuuukkkkkkkckkkkkkkkkkRRRRR",
+      "mmmmmmmmmmmmmuuukkkkkkkkckkkkkkkkkkRRRRR",
+      "mmmmmmmmmmmmzzzzszkkkkkkckkkkkkkkkkRRRRR",
+      "mmmmmmmmmmmzzzzzzzzkkkkkckkkkkkkkkkRRRRR",
+      "mmmmmmmmZZzzzzzzzzzzzkkkckkkkkkkkkkkkkYk",
+      "mmmmZZZZZZZzzzzzzzzzzzkkckkkkkkkkkkYkkkk",
+      "mZZZZZZZZZZzzzzzzzzzzzzzkkkkkkkkkkkkkkkk",
+      "ZZZZZZZZZZZZzzzzzzzzzzzzzkkkkkkkkkkkkYkk",
+      "ZZZZZZZZZZZZzzzzzzzzzzzzzzkkkkkkkkkkkkkk",
+      "ZZZZZZZZZZZZZzzzzzzzzzzzzzzwzzzzzzzzzzzz",
+      "wwwwwwwwwwwwwwwwwwwzzzzzzzzwzzzzzzYzzzYz",
+      "zzzzzzYzzYzzzzzbzzwzzzzzzzzwzYzzbzzzzzzz",
+      "zzYzYzzzzzzbzzYzzYwzzzzzzzzwzzzzzzzzzbzz",
+      "zzzzzzzzYzYzYzzzzzwzzzzzzzzwzzzYzzzzYzzz",
+      "zYzzYzzbzzzzzzzYzzwzzzzzzzzwzzzzzzzzzzzz",
+      "zzzzzzzzzzzYzbzzzbwzzzzzzzzwzYzzzzzbzzzz",
+      "zzzYzzzzzzzzzzzzYzwzzzzzzzzwzzzzzYzzzYzz",
+      "zYzzzzzzzzzzzYzzzzwzzzzzzzzwzzzzzzzzzzzz",
+      "wwwwwwwwwwwwwwwwwwwzzzzzzzzwwwwwwwwwwwww",
+      "---------------------Y------------------",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "----------------------------------------",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+      "zYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzz",
     ],
     houses: [
       // dentro del recinto de las palmeras asoma un chalé de tejado rojo
@@ -889,30 +970,56 @@ const MAPS = {
     playerStart: { x: 18, y: 30, dir: "right" },
     signs: {
       ...area(19, 30, 2, 1, [
-        { text: "El descapotable ha quedado empotrado contra la palmera. Del capó sale un humo que no huele nada bien." },
+        {
+          text: "El descapotable ha quedado empotrado contra la palmera. Del capó sale un humo que no huele nada bien.",
+        },
         { who: "kael", text: "Bueno... el monstruo ha quedado peor. Creo." },
       ]),
       "21,30": [{ text: "La palmera ni se ha inmutado. Ella ha ganado." }],
-      ...area(9, 30, 1, 4, [{ text: "Conos de obra. La carretera está cortada por aquí." }]),
-      ...area(30, 30, 1, 4, [{ text: "Conos de obra. La carretera está cortada por aquí." }]),
+      ...area(9, 30, 1, 4, [
+        { text: "Conos de obra. La carretera está cortada por aquí." },
+      ]),
+      ...area(30, 30, 1, 4, [
+        { text: "Conos de obra. La carretera está cortada por aquí." },
+      ]),
       ...area(18, 21, 1, 8, [
-        { text: "Un muro blanco. Detrás hay tantas palmeras que no se ve nada." },
+        {
+          text: "Un muro blanco. Detrás hay tantas palmeras que no se ve nada.",
+        },
       ]),
       ...area(13, 21, 5, 1, [
-        { text: "Un muro blanco. Detrás hay tantas palmeras que no se ve nada." },
+        {
+          text: "Un muro blanco. Detrás hay tantas palmeras que no se ve nada.",
+        },
       ]),
       ...area(27, 20, 1, 9, [
-        { text: "Al otro lado del muro hay un jardín con palmeras. Y un cartel de «Propiedad privada»." },
+        {
+          text: "Al otro lado del muro hay un jardín con palmeras. Y un cartel de «Propiedad privada».",
+        },
       ]),
       "16,13": [
         { text: "«Antigua entrada de abastecimiento»." },
         { text: "Al lado, una cuesta de arenisca sube hacia las rocas." },
       ],
-      ...area(12, 12, 1, 1, [{ text: "El agua está fría y transparente. Hasta aquí llega la playa." }]),
-      ...area(11, 13, 1, 1, [{ text: "El agua está fría y transparente. Hasta aquí llega la playa." }]),
-      ...area(10, 14, 1, 1, [{ text: "El agua está fría y transparente. Hasta aquí llega la playa." }]),
+      ...area(12, 12, 1, 1, [
+        {
+          text: "El agua está fría y transparente. Hasta aquí llega la playa.",
+        },
+      ]),
+      ...area(11, 13, 1, 1, [
+        {
+          text: "El agua está fría y transparente. Hasta aquí llega la playa.",
+        },
+      ]),
+      ...area(10, 14, 1, 1, [
+        {
+          text: "El agua está fría y transparente. Hasta aquí llega la playa.",
+        },
+      ]),
       ...area(16, 6, 3, 1, [
-        { text: "Desde aquí arriba se ve todo el mar. Las olas rompen contra las rocas negras." },
+        {
+          text: "Desde aquí arriba se ve todo el mar. Las olas rompen contra las rocas negras.",
+        },
       ]),
       ...area(15, 7, 1, 2, [{ text: "Rocas negras, resbaladizas. Mejor no." }]),
     },
@@ -976,7 +1083,9 @@ const STORY = {
       { wait: 30 },
       {
         say: [
-          { text: "El descapotable acaba su carrera contra una palmera, justo al lado de la playa." },
+          {
+            text: "El descapotable acaba su carrera contra una palmera, justo al lado de la playa.",
+          },
           { who: "kael", mood: "surprised", text: "...Sigo vivo. Creo." },
           { who: "kael", text: "Huele a mar. ¿Dónde narices he acabado?" },
         ],
@@ -999,6 +1108,9 @@ const LEVELS = [
   { name: "La batalla contra el monstruo", minigame: "chase" },
   { name: "La playa", story: "playa" },
 ];
+
+// Mapas donde suena la música alegre de la fase 1 (js/audio.js).
+const MUSIC_MAPS = new Set(["casa", "urba"]);
 
 // Batalla en coche contra el monstruo (js/battle.js y js/chasetop.js).
 const CHASE = {
@@ -1028,7 +1140,9 @@ const CREDITS = [
   { t: "Nunito" },
   {},
   { h: "Reparto" },
-  { t: "Anthon · Dominik · Vives · Muha · Diego · Oscar · Tymen · Ricardo · Mark · Jamie · Carol · Owen" },
+  {
+    t: "Anthon · Dominik · Vives · Muha · Diego · Oscar · Tymen · Ricardo · Mark · Jamie · Carol · Owen · Keziah",
+  },
   { t: "y un rosal deprimido" },
   {},
   {},
