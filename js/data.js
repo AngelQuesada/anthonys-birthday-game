@@ -632,8 +632,16 @@ const MAPS = {
       { type: "lightup", x: 5, y: 29, w: 7, h: 4 },
       { type: "plant", x: 1, y: 32 },
     ],
-    // «New Game» empieza aquí, en el salón (la cinemática de despertar está en STORY.opening).
-    playerStart: { x: 7, y: 27, dir: "down" },
+    // «Start» empieza aquí, junto a la cama grande del dormitorio de arriba (la cama ocupa 16..19 x 4..6).
+    playerStart: { x: 15, y: 5, dir: "down" },
+    // Lo primero que piensa Anthon al empezar la partida.
+    intro: [
+      {
+        who: "kael",
+        mood: "base",
+        text: "(Angel told me to head to the pool... what could that muscly man want?)",
+      },
+    ],
     exits: {
       "12,30": { to: "urba", x: 44, y: 9, dir: "right" },
       "12,31": { to: "urba", x: 44, y: 9, dir: "right" },

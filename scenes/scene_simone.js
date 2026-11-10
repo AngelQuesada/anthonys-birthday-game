@@ -3,8 +3,14 @@
 SCENES.simone = {
   minigame: "chase",
   lines: [
-    { "simone.base": "Ahh... the two of you are exactly who I've been waiting for." },
-    { "ricardo.disapointed": "I'm pretty sure that was meant for you guys, I'm out of here." },
+    {
+      "simone.base":
+        "Ahh... the two of you are exactly who I've been waiting for.",
+    },
+    {
+      "ricardo.disapointed":
+        "I'm pretty sure that was meant for you guys, I'm out of here.",
+    },
     { "angel.mad": "God, I can't stand this guy." },
     {
       "simone.base":
@@ -25,7 +31,10 @@ SCENES.simone = {
     { fade: 0, frames: 60 },
     { wait: 20 },
     { "ricardo.mad": "What the hell is this? Turn it off!" },
-    { "angel.mad": "I got nervous and hit it by accident, we'll have to fight like this." },
+    {
+      "angel.mad":
+        "I got nervous and hit the play button by accident, we'll have to fight like this.",
+    },
     { "ricardo.disapointed": "You disgust me." },
   ],
 };

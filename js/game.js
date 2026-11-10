@@ -197,6 +197,7 @@
     G.restart = () => startLevel(lv);
     G.visited = new Set();
     G.flags = new Set();
+    G.greeted = new Set();
     G.dialog = null;
     G.cut = null;
     G.mini = null;
@@ -1258,7 +1259,7 @@
 
   // ---------- escenas ----------
   const TITLE_MAP = 'urba'; // mapa que se ve de fondo en el título y los créditos
-  const TITLE_MENU = ['New Game', 'Choose Level', 'Credits'];
+  const TITLE_MENU = ['Start'];
 
   function drawTitle() {
     titleBackground();
@@ -1284,12 +1285,16 @@
     g.addColorStop(1, '#f0892a');
     ctx.fillStyle = g;
     ctx.fillText('Anthonys Bday', W / 2, y);
-    text('— Someone is NOT going to like this! —', W / 2, y + 78, { size: 26, align: 'center', color: '#fbe9d0' });
 
-    panel(280, 340, 400, 206);
-    menuList(TITLE_MENU, G.menu, W / 2, 386, 56);
+    panel(280, 340, 400, 130);
+    menuList(TITLE_MENU, G.menu, W / 2, 384, 56);
+    ctx.globalAlpha = 0.55 + 0.45 * Math.sin(G.t / 18);
+    text('Press SPACE to start', W / 2, 432, { size: 22, align: 'center', color: '#fbe9d0' });
+    ctx.globalAlpha = 1;
 
-    text('↑ ↓  choose     SPACE  accept', W / 2, 680, { size: 20, align: 'center', color: 'rgba(255,240,220,0.8)' });
+    // instrucciones
+    text('Use the arrow keys to move', W / 2, 545, { size: 24, align: 'center', color: 'rgba(255,240,220,0.9)' });
+    text('Press SPACE to interact', W / 2, 585, { size: 24, align: 'center', color: 'rgba(255,240,220,0.9)' });
   }
 
   function drawLevels() {
@@ -1820,7 +1825,7 @@
     const startAtBattle = () => startLevel(LEVELS.find(lv => lv.minigame === 'chase'));
     // TEMPORAL: al recargar empieza la historia de la playa (con Angel y Ricardo junto al coche).
     const startAtBeachStory = () => startLevel(LEVELS.find(lv => lv.story === 'playa'));
-    startAtBeachStory();
+    toTitle(); // menú inicial; «Start» lanza el primer nivel (LEVELS[0])
     if (location.search.includes('debug')) window.__G = G;
     requestAnimationFrame(frame);
   }
