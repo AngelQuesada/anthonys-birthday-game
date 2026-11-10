@@ -3,8 +3,7 @@
 // el terremoto: Angel, asustado, se acerca a Anthon y se lo lleva corriendo.
 SCENES.earthquake = {
   map: "urba",
-  // TEMPORAL para probar: basta con hablar con 1 invitado cualquiera. El valor final es greeted: "all".
-  when: { greeted: 1 },
+  when: { greeted: "all" },
   lines: [
     { wait: 20 },
     { enter: { who: "angel", speed: 2 } },

@@ -1513,8 +1513,10 @@
       text(G.world.def.name, 24 + bw / 2, 60, { size: fs, align: 'center', color: '#ffe28a', weight: 700 });
       ctx.globalAlpha = 1;
     }
-    // el contador de invitados solo tiene sentido en la urbanización (ni en la batalla ni en la playa)
-    if ((G.scene === 'play' || G.scene === 'dialog') && G.world.id === 'urba') drawGuestCounter();
+    // el contador de invitados solo sale en la urbanización, una vez acabada la escena de llegada a la piscina
+    // (y nunca durante una cinemática)
+    if ((G.scene === 'play' || G.scene === 'dialog') && G.world.id === 'urba'
+      && G.flags.has('scene:pool') && !G.cut) drawGuestCounter();
     if (G.dialog) drawDialog();
   }
 
@@ -1771,60 +1773,6 @@
   function boot() {
     resize();
     addEventListener('resize', resize);
-    // TEMPORAL: sin menús, el juego arranca directamente en la playa para probarla.
-    // (Para probar en otro sitio: enterMap('urba', x, y, 'down', false) y spawnGuests().)
-    const startAtBeach = () => {
-      G.restart = startAtBeach;
-      G.visited = new Set();
-      G.flags = new Set();
-      G.greeted = new Set();
-      const s = MAPS.playa.playerStart;
-      enterMap('playa', s.x, s.y, s.dir, false);
-    };
-    // TEMPORAL: al recargar se aparece en la entrada de la piscina (urba), con los invitados repartidos al azar.
-    const startAtPool = () => {
-      G.restart = startAtPool;
-      G.visited = new Set();
-      G.flags = new Set();
-      G.greeted = new Set();
-      enterMap('urba', 36, 47, 'down', false);
-    };
-    // TEMPORAL: al recargar se aparece en el salón, junto a la salida al patio, para probar la escena de Ricardo.
-    const startAtHome = () => {
-      G.restart = startAtHome;
-      G.visited = new Set();
-      G.flags = new Set();
-      G.greeted = new Set();
-      enterMap('casa', 10, 30, 'right', false);
-    };
-    // TEMPORAL: al recargar se aparece justo delante de Ricardo (mirándole), para probar la escena del terremoto
-    // hablando con él. Su escena de bienvenida se marca como vista para que no se cruce.
-    const startFacingGuest = () => {
-      G.restart = startFacingGuest;
-      G.visited = new Set();
-      G.flags = new Set(['scene:ricardo']);
-      G.greeted = new Set();
-      enterMap('urba', GUEST_AT_HOME.x, GUEST_AT_HOME.y + 1, 'up', false);
-    };
-    // TEMPORAL: al recargar se aparece justo delante de Jessie (mirándola) y empieza su chat.
-    const startFacingJessie = () => {
-      G.restart = startFacingJessie;
-      G.visited = new Set();
-      G.flags = new Set(['scene:ricardo']);
-      G.greeted = new Set();
-      enterMap('urba', 36, 47, 'down', false);
-      const p = G.player;
-      const [dx, dy] = DIRS[p.dir];
-      const g = GUESTS.find(x => x.char === 'jessie');
-      const lines = CHATS[g.chat].lines.map(l => ({ who: g.char, mood: l.image, text: l.text }));
-      const npc = makeEntity(g.char, p.x + dx, p.y + dy, OPP[p.dir], { talks: [lines], guest: g.char });
-      G.world.npcs.push(npc);
-      startDialog(lines, npc, false, greetGuest(npc));
-    };
-    // TEMPORAL: al recargar empieza la batalla en coche, para probar la escena de Simone (scenes/scene_simone.js).
-    const startAtBattle = () => startLevel(LEVELS.find(lv => lv.minigame === 'chase'));
-    // TEMPORAL: al recargar empieza la historia de la playa (con Angel y Ricardo junto al coche).
-    const startAtBeachStory = () => startLevel(LEVELS.find(lv => lv.story === 'playa'));
     toTitle(); // menú inicial; «Start» lanza el primer nivel (LEVELS[0])
     if (location.search.includes('debug')) window.__G = G;
     requestAnimationFrame(frame);

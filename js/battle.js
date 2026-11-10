@@ -566,10 +566,16 @@ const Battle = (() => {
   }
 
   // Vida del monstruo: una muesca por bala (compacta para no taparle la cabeza).
-  function drawBossBar(st, ctx, { text, panel }) {
+  function drawBossBar(st, ctx, { text, panel, FONT }) {
     const m = st.mon;
     panel(190, 8, 580, 50, true);
-    text(CHASE.boss, 214, 33, { size: 20, color: '#ffe28a', weight: 700 });
+    // el nombre se encoge hasta caber en el hueco que deja la barra (de 214 a ~380)
+    let size = 20;
+    for (; size > 10; size--) {
+      ctx.font = `700 ${size}px ${FONT}`;
+      if (ctx.measureText(CHASE.boss).width <= 166) break;
+    }
+    text(CHASE.boss, 214, 33, { size, color: '#ffe28a', weight: 700 });
     const bx = 390, by = 22, bw = 356, bh = 22;
     ctx.fillStyle = '#1e0303';
     ctx.fillRect(bx - 3, by - 3, bw + 6, bh + 6);

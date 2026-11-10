@@ -1290,7 +1290,7 @@ const MUSIC_MAPS = new Set(["casa", "urba"]);
 
 // Batalla en coche contra el monstruo (js/battle.js y js/chasetop.js).
 const CHASE = {
-  boss: "THE MONSTER",
+  boss: "Simone (Cocaine version)",
   hp: 30, // balas que aguanta antes de explotar
   carHp: 5, // jeringuillas que aguanta el coche (la barra nunca llega a cero: con 1 salta scenes/scene_gabi.js)
   syringeEvery: 85, // frames entre jeringuillas al empezar; lanza más rápido cuanto menos vida le queda
