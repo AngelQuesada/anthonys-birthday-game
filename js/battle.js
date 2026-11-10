@@ -43,19 +43,23 @@ const Battle = (() => {
    */
   // intro (opcional): función a la que se llama cuando el coche se para delante de Simone, con otra
   // función que empieza el combate. Sin intro, el combate empieza directamente.
-  function create(onWin, intro) {
+  // opts.drive: el final del juego (scenes/scene_sharon.js). El coche, ya arreglado, va por una carretera
+  // recta sin monstruo ni interfaz y sin que el jugador lo maneje; la escena lo frena y arranca con acciones.
+  function create(onWin, intro, opts = {}) {
     const view = views.top;
+    const drive = !!opts.drive;
     const st = {
-      view, onWin, intro, t: 0,
-      car: { x: view.carStartX, vx: 0, recoil: 0, flash: 0, lift: 0, hp: CHASE.carHp, hurt: 0, safe: 0, smoking: false, skid: 0, angle: 0 },
+      view, onWin, intro, t: 0, straight: drive,
+      car: { x: view.carStartX, vx: 0, recoil: 0, flash: 0, lift: drive ? view.sceneLift : 0, hp: CHASE.carHp, hurt: 0, safe: 0, smoking: false, skid: 0, angle: 0 },
       ammo: CHASE.magazine, reload: 0, cooldown: 0,
       mon: {
         x: view.carStartX, hp: CHASE.hp, lag: CHASE.hp, flash: 0, roar: 0, knock: 0, phase: 0, roarT: 90,
-        throwT: CHASE.syringeEvery, throwAnim: 0, lift: 0, dying: false, dieT: 0, dead: false, human: !!intro,
+        throwT: CHASE.syringeEvery, throwAnim: 0, lift: 0, dying: false, dieT: 0, dead: drive, human: !!intro,
       },
       bullets: [], syringes: [], shots: [], parts: [],
-      bike: null, act: null,
-      shake: 0, white: 0, state: intro ? 'intro' : 'fight', stateT: 0, banner: intro ? 0 : 150, done: false,
+      bike: null, act: null, braking: false,
+      shake: 0, white: 0, state: drive ? 'drive' : intro ? 'intro' : 'fight', stateT: 0,
+      banner: drive || intro ? 0 : 150, done: false,
     };
     view.init(st);
     return st;
@@ -138,7 +142,7 @@ const Battle = (() => {
     if (car.safe > 0) car.safe--;
     // en las escenas el coche se coloca solo, dejando sitio a la moto de Gabi
     if (st.state === 'scene' && !car.skid) car.x += (v.sceneCarX - car.x) * 0.04;
-    car.lift += ((st.state === 'scene' ? v.sceneLift : 0) - car.lift) * 0.04;
+    car.lift += ((st.state === 'scene' || st.state === 'drive' ? v.sceneLift : 0) - car.lift) * 0.04;
     // sin frenos: derrapa a un lado y a otro, cada vez más
     if (car.skid) {
       const k = Math.min(1, ++car.skid / 50);
@@ -468,6 +472,16 @@ const Battle = (() => {
       start(st) { st.car.skid = 1; Sfx.skid(); },
       update: (st, a) => a.t > 110,
     },
+    // final (state 'drive'): el coche frena hasta pararse en mitad de la carretera
+    brake: {
+      start(st) { st.braking = true; Sfx.brake(); },
+      update: st => st.w.speed <= 0,
+    },
+    // final: vuelve a arrancar (la escena sigue mientras va cogiendo velocidad)
+    go: {
+      start(st) { st.braking = false; },
+      update: (st, a) => a.t > 30,
+    },
   };
 
   function act(st, name) {
@@ -600,7 +614,7 @@ const Battle = (() => {
 
   function drawHud(st, ctx, ui) {
     const { W, H, text, panel } = ui;
-    if (st.state === 'intro') return; // durante la escena de Simone no hay interfaz
+    if (st.state === 'intro' || st.state === 'drive') return; // ni en la escena de Simone ni en el final hay interfaz
     if (!st.mon.dead) drawBossBar(st, ctx, ui);
     drawCarBar(st, ctx, ui);
 

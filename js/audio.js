@@ -650,6 +650,11 @@ const Sfx = (() => {
       hiss({ type: 'bandpass', freq: 2600, freqEnd: 1900, q: 6, dur: 2, vol: 0.3, attack: 0.05 });
       tone({ freq: 1250, freqEnd: 980, type: 'sawtooth', dur: 2, vol: 0.035 });
     },
+    // frenazo corto (el coche se para en la carretera del final)
+    brake: () => {
+      hiss({ type: 'bandpass', freq: 2400, freqEnd: 1700, q: 6, dur: 0.9, vol: 0.25, attack: 0.03 });
+      tone({ freq: 1150, freqEnd: 850, type: 'sawtooth', dur: 0.9, vol: 0.03 });
+    },
     boom: () => {
       hiss({ type: 'lowpass', freq: 1400, freqEnd: 120, dur: 0.45, vol: 0.3, attack: 0.005 });
       tone({ freq: 110, freqEnd: 40, dur: 0.35, vol: 0.3, type: 'sine' });

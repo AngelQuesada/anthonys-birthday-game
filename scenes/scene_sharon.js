@@ -2,6 +2,8 @@
 // casa blanca), en cuanto Anthon pisa la arena alta. Sharon mira el mar; al oír a Anthon se da la vuelta.
 // Él se sienta a su lado y los dos miran el mar mientras ella habla. Al final Angel le llama desde el coche:
 // la cámara baja hasta Angel y Ricardo y, al volver, Sharon ya no está: en su sitio hay una cartera.
+// Final del juego: Anthon baja con Angel y Ricardo, se van en coche por una carretera recta, Angel para para
+// poner su canción, salen unos créditos rapidísimos y la pantalla se queda en negro con el mensaje final.
 SCENES.sharon = {
   map: "playa",
   area: [50, 13, 56, 13],
@@ -84,5 +86,58 @@ SCENES.sharon = {
     { wait: 30 },
     { pickup: { at: [54, 9], name: "Lost Wallet" } },
     { "anthon.base": "(I lost my wallet here a few years ago...)" },
+
+    // ---------- final del juego ----------
+    // Anthon baja andando hacia el coche y se sale de la pantalla (la cámara se queda quieta)
+    { wait: 30 },
+    { run: { who: ["anthon"], to: [39, 40] } },
+    { wait: 20 },
+    // corte: la cámara ya está en el coche y Anthon llega por el pasillo hasta el lado de Angel
+    { fade: 1, frames: 40 },
+    { place: { who: "anthon", at: [39, 40], dir: "down" } }, // justo fuera de cámara
+    { camera: [39, 48], frames: 1 },
+    { fade: 0, frames: 40 },
+    { walk: { to: [39, 50] } },
+    { face: ["ricardo", "angel"] },
+    { look: { who: "anthon", dir: "left" } },
+    { wait: 15 },
+    { "ricardo.base": "Where were you?" },
+    { "angel.base": "Come on, let's go, they're waiting for us at the pool" },
+    // el coche por la carretera del combate, pero recta
+    { fade: 1, frames: 60 },
+    { wait: 30 },
+    { drive: true },
+    { fade: 0, frames: 60 },
+    { wait: 130 }, // ~3 s en recto contando el fundido
+    { act: "brake" },
+    { wait: 20 },
+    { "angel.mad": "Wait" },
+    { music: "media/music/song_carino.mp3" },
+    { wait: 120 },
+    { "angel.base": "Much better" },
+    { "ricardo.disapointed": "Not again" },
+    // el coche vuelve a arrancar mientras la pantalla se va a negro
+    { act: "go" },
+    { fade: 1, frames: 60 },
+    // pantalla final: mensaje a la izquierda y foto a la derecha; a los 3 s la izquierda sube y pasan los
+    // créditos (todos de Ángel); al acabar, la foto va al centro con el texto de despedida debajo
+    {
+      finale: {
+        message: "Happy birthday,\nI love you millions",
+        photo: "media/anthony_and_angel.jpeg",
+        close: "You can close it now",
+        hold: 180, // 3 s con el mensaje quieto
+        speed: 2.5, // px por frame que sube la columna izquierda
+        title: "Anthonys Bday",
+        name: "Ángel Quesada",
+        roles: [
+          "Directed by", "Produced by", "Written by", "Game Design", "Lead Programmer", "Pixel Art",
+          "Character Design", "Animation", "Music Supervisor", "Sound Design", "Level Design", "Monster Design",
+          "Stunt Driver", "Car Mechanic", "Insurance Agent", "Pool Party Planner", "Catering", "Photographer",
+          "Earthquake Coordinator", "Beach Cleaning", "Lost Wallet Finder", "Quality Assurance", "Bug Creator",
+          "Bug Fixer", "Casting", "Special Thanks", "Executive Producer",
+        ],
+      },
+    }, // se queda para siempre
   ],
 };

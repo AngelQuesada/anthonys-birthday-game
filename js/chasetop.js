@@ -28,7 +28,9 @@ Battle.views.top = (() => {
   const mod = (a, n) => ((a % n) + n) % n;
   // Centro del camino (px del mapa) para una fila y; periódico en LEN para que el bucle no tenga costura.
   const center = y => MAP_W / 2 + 50 * Math.sin((2 * Math.PI * y) / LEN) + 18 * Math.sin((4 * Math.PI * y) / LEN + 1.3);
-  const roadCol = row => Math.round(center(row * T + T / 2) / T);
+  // Carretera recta del final (scenes/scene_sharon.js): el centro no se mueve.
+  const straightCenter = () => MAP_W / 2;
+  const roadCenter = (st, y) => (st.straight ? straightCenter : center)(y);
 
   // ---------- mapa del bucle ----------
   function seeded(seed) {
@@ -38,7 +40,8 @@ Battle.views.top = (() => {
     };
   }
 
-  function buildTiles() {
+  function buildTiles(mid) {
+    const roadCol = row => Math.round(mid(row * T + T / 2) / T);
     const r = seeded(7);
     const rows = [];
     for (let y = 0; y < ROWS; y++) {
@@ -324,7 +327,7 @@ Battle.views.top = (() => {
   let art = null;
   function loadArt() {
     if (art) return art;
-    const tiles = buildTiles();
+    const tiles = buildTiles(center);
     const monster = {};
     for (const key of ['000', '001', '010', '011', '100', '101', '110', '111']) {
       monster[key] = makeMonster(key[0] === '1', key[1] === '1', key[2] === '1');
@@ -347,10 +350,21 @@ Battle.views.top = (() => {
     return art;
   }
 
+  // Suelo y árboles de la carretera recta (solo se generan si hacen falta).
+  function straightArt() {
+    if (!art.straight) {
+      const tiles = buildTiles(straightCenter);
+      art.straight = { ground: buildGround(tiles), statics: dryStatics(Art.buildStatics({ tiles })) };
+    }
+    return art.straight;
+  }
+  const road = st => (st.straight ? straightArt() : art);
+
   // ---------- estado y avance ----------
   // w.y: fila del mapa (px) en lo alto de la pantalla; baja sin parar porque el coche avanza hacia arriba.
   function init(st) {
     loadArt();
+    if (st.straight) straightArt();
     st.w = { y: 0, camX: 0, speed: SPEED };
     if (st.state === 'intro') {
       // Simone espera más adelante en el camino; el coche frena hasta tenerlo donde luego estará el monstruo
@@ -366,10 +380,13 @@ Battle.views.top = (() => {
       const d = w.y - w.stopY;
       w.speed = Math.min(SPEED, Math.sqrt(2 * DECEL * Math.max(0, d)));
       if (d <= 0.5) { w.speed = 0; w.y = w.stopY; w.stopped = true; }
+    } else if (st.state === 'drive') {
+      // final: va recto; la acción `brake` lo para y `go` lo vuelve a arrancar
+      w.speed = st.braking ? Math.max(0, w.speed - DECEL * 2) : Math.min(SPEED, w.speed + 0.04);
     } else w.speed = Math.min(SPEED, w.speed + 0.04); // arranca poco a poco tras la escena
     w.y -= w.speed;
     // la cámara sigue el camino a la altura del coche, así las curvas no lo sacan de la carretera
-    w.camX = clamp(center(w.y + CAR_BASE - 12) - VW / 2, 0, MAP_W - VW);
+    w.camX = clamp(roadCenter(st, w.y + CAR_BASE - 12) - VW / 2, 0, MAP_W - VW);
     // polvo de las ruedas traseras y de los pies del monstruo
     if (w.speed > 0.3 && st.t % 3 === 0) {
       const x = st.car.x + (st.t % 6 ? -9 : 7);
@@ -488,12 +505,13 @@ Battle.views.top = (() => {
     g.save();
     g.translate(...Battle.shakeOffset(st));
     const oy = Math.round(mod(w.y, LEN)), camX = Math.round(w.camX);
-    g.drawImage(art.ground, -camX, -oy);
-    g.drawImage(art.ground, -camX, -oy + LEN);
+    const { ground, statics } = road(st);
+    g.drawImage(ground, -camX, -oy);
+    g.drawImage(ground, -camX, -oy + LEN);
 
     // árboles, monstruo y coche ordenados por su base, como en el resto del juego
     const list = [];
-    [0, 1, -1].forEach(k => art.statics.forEach(o => {
+    [0, 1, -1].forEach(k => statics.forEach(o => {
       const y = o.dy - oy + k * LEN;
       if (y > VH || y + o.img.height < 0) return;
       list.push({ img: o.img, x: o.dx - camX, y, base: o.base - oy + k * LEN });

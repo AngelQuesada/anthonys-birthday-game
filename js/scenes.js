@@ -52,6 +52,16 @@
 //       { item: { type: "wallet", at: [54, 9] } } // deja un objeto en el suelo (tipo de Art.furniture)
 //       { pickup: { at: [54, 9], name: "Wallet" } } // Anthon lo recoge: aviso «You picked up: Wallet» (se cierra con ESPACIO)
 //
+// Pasos del final (scenes/scene_sharon.js):
+//       { drive: true }                           // el coche va por la carretera del combate, pero recta, sin monstruo
+//                                                 // ni interfaz y sin control del jugador (mejor tras un fade a negro)
+//       { act: "brake" } / { act: "go" }          // con drive: el coche frena hasta pararse / vuelve a arrancar
+//       { finale: { message, photo, close, hold, speed, title, name, roles: [...] } }
+//                                                 // pantalla final sobre negro: `message` a la izquierda y `photo` a la
+//                                                 // derecha; tras `hold` frames la izquierda sube (`speed` px/frame) con
+//                                                 // los créditos (cada cargo con `name`); al acabar la foto va al centro
+//                                                 // con `close` debajo. La escena se queda ahí
+//
 // "personaje" es la clave en CHARACTERS (data.js) o "anthon"; "imagen" una de sus fotos (portraits), que
 // puede llevar puntos ("sharon.suspecting.smile" -> imagen "suspecting.smile"). Un texto vacío ("") solo muestra la cara.
 // Los personajes que hablan se giran hacia Anthon al empezar la escena, salvo si la escena lleva `face: false`.

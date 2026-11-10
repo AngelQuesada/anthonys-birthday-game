@@ -336,6 +336,18 @@
       G.fade.cb = null;
       return startLevel(lv);
     }
+    if ('drive' in s) {
+      // drive: true -> el coche por la carretera recta del final, sin control del jugador (mejor tras un fade a negro).
+      // La escena sigue encima: diálogos, { act: 'brake' } / { act: 'go' }, música, créditos...
+      G.camLock = null;
+      G.shake = 0;
+      G.mini = { id: 'drive', game: Battle, st: Battle.create(null, null, { drive: true }) };
+      return nextStep();
+    }
+    if ('finale' in s) {
+      c.finale = { ...s.finale, t: 0 };
+      portraitImage(s.finale.photo);
+    }
     if ('act' in s) {
       if (!G.mini) { console.warn('Escena: { act } solo vale dentro de un minijuego'); return nextStep(); }
       G.mini.game.act(G.mini.st, s.act);
@@ -489,6 +501,8 @@
       if (!G.mini || !G.mini.game.acting(G.mini.st)) nextStep();
     } else if ('hold' in s) {
       // se queda aquí hasta que otra cosa continúe la historia
+    } else if ('finale' in s) {
+      c.finale.t++; // pantalla final: no termina nunca
     } else if ('shake' in s) {
       G.shake = s.shake - c.t;
       if (G.shake <= 0) nextStep();
@@ -1360,6 +1374,71 @@
     ctx.restore();
   }
 
+  // Pantalla final ({ finale } en una escena), sobre negro:
+  //  1. mensaje a la izquierda y foto fija a la derecha;
+  //  2. tras `hold` frames la columna izquierda sube poco a poco (`speed` px/frame) y van pasando los créditos;
+  //  3. al acabar los créditos la foto se desliza al centro y debajo aparece el texto `close`.
+  function drawFinale(f) {
+    const hold = f.hold || 180, speed = f.speed || 2.5, move = f.move || 90, gap = 96;
+    const fadeIn = Math.min(1, f.t / 60);
+    const titleY = H + 120, rolesY = titleY + 140;
+    const end = rolesY + f.roles.length * gap + 40; // desplazamiento con el que el último cargo sale por arriba
+    const off = Math.min(end, Math.max(0, f.t - hold) * speed);
+    const doneT = hold + end / speed; // frame en que acaban los créditos
+    const ease = x => x * x * (3 - 2 * x);
+    const k = ease(Math.min(1, Math.max(0, (f.t - doneT) / move)));
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    // columna izquierda: mensaje y, debajo, los créditos
+    if (off < end) {
+      const cx = W / 4;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, W / 2, H);
+      ctx.clip();
+      ctx.globalAlpha = fadeIn;
+      const lines = f.message.split('\n');
+      lines.forEach((l, i) => text(l, cx, H / 2 - off + (i - (lines.length - 1) / 2) * 66, { size: 52, align: 'center', color: '#ffd45e', weight: 800 }));
+      text(f.title, cx, titleY - off, { size: 48, align: 'center', color: '#ffd45e', weight: 800 });
+      f.roles.forEach((role, i) => {
+        const y = rolesY + i * gap - off;
+        if (y < -60 || y > H + 60) return;
+        text(role, cx, y, { size: 24, align: 'center', color: '#ffd45e', weight: 700 });
+        text(f.name, cx, y + 38, { size: 34, align: 'center', weight: 700 });
+      });
+      ctx.restore();
+    }
+
+    // foto con marco blanco: a la derecha y, al terminar los créditos, al centro (un poco más arriba)
+    const img = portraitImage(f.photo);
+    let bottom = H / 2;
+    if (img) {
+      const s = Math.min(380 / img.naturalWidth, 500 / img.naturalHeight);
+      const pw = img.naturalWidth * s, ph = img.naturalHeight * s;
+      const x = W * 3 / 4 + (W / 2 - W * 3 / 4) * k, y = H / 2 - 50 * k;
+      bottom = y + ph / 2;
+      ctx.save();
+      ctx.globalAlpha = fadeIn;
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.fillRect(x - pw / 2 - 4, y - ph / 2 + 8, pw + 24, ph + 24);
+      ctx.fillStyle = '#fffaf0';
+      ctx.fillRect(x - pw / 2 - 12, y - ph / 2 - 12, pw + 24, ph + 24);
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(img, x - pw / 2, y - ph / 2, pw, ph);
+      ctx.restore();
+    }
+
+    // texto de despedida bajo la foto, cuando ya está en el centro
+    const a = Math.min(1, Math.max(0, (f.t - doneT - move) / 40));
+    if (a > 0) {
+      ctx.save();
+      ctx.globalAlpha = a;
+      text(f.close, W / 2, bottom + 52, { size: 32, align: 'center', color: '#fbe9d0', weight: 700 });
+      ctx.restore();
+    }
+  }
+
   function drawCutscene(camX, camY) {
     const c = G.cut;
     if (c.dark > 0) {
@@ -1371,6 +1450,7 @@
       ctx.fillStyle = `rgba(255,255,255,${Math.min(1, c.flash * 1.4)})`;
       ctx.fillRect(0, 0, W, H);
     }
+    if (c.finale) drawFinale(c.finale);
     if (c.notice) {
       // aviso de objeto recogido: panel arriba con el objeto en grande
       const n = c.notice, e = 1 - Math.pow(1 - n.anim, 3);
@@ -1456,6 +1536,8 @@
       if (imgs) for (const m in imgs) portraitImage(imgs[m]);
     }
   }
+  // Foto de la pantalla final ({ finale } en las escenas), para que ya esté cargada al llegar.
+  Object.values(SCENES).forEach(sc => (sc.lines || []).forEach(l => { if (l.finale) portraitImage(l.finale.photo); }));
   // Última foto mostrada por personaje: se mantiene mientras la nueva aún no está lista.
   const lastPhoto = new Map();
 
@@ -1561,6 +1643,7 @@
       ctx.fillStyle = `rgba(0,0,0,${G.cut.dark})`;
       ctx.fillRect(0, 0, W, H);
     }
+    if (G.cut && G.cut.finale) drawFinale(G.cut.finale);
     if (G.dialog) drawDialog();
   }
 
