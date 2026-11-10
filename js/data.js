@@ -1,7 +1,7 @@
 "use strict";
 
 // voice: tono del "blip" al escribir el texto.
-// hairStyle: short | long | spiky | old
+// hairStyle: short | bob (media melena corta) | long | spiky | old
 const CHARACTERS = {
   kael: {
     id: "kael",
@@ -16,7 +16,13 @@ const CHARACTERS = {
     pants: "#4a3b2e",
     eyes: "#35b04f",
     // Retratos de diálogo por expresión (mood). "normal" usa la imagen base.
-    portraits: { normal: "characters/Anthon/base.png" },
+    portraits: {
+      normal: "characters/Anthon/base.png",
+      base: "characters/Anthon/base.png",
+      surprised: "characters/Anthon/surprised.png",
+      scared: "characters/Anthon/scared.png",
+      "smile-cry": "characters/Anthon/smile-cry.png",
+    },
   },
   dominik: {
     id: "dominik",
@@ -216,6 +222,148 @@ const CHARACTERS = {
       happy: "characters/Keziah/happy.png",
     },
   },
+  gabi: {
+    id: "gabi",
+    name: "Gabi",
+    nameRevealedBy: "gabi_revealed", // se muestra "???" hasta que G.flags contenga esta bandera
+    voice: 0.8,
+    skin: "#e8b896",
+    hair: "#2a2630",
+    hairStyle: "short",
+    hood: "#3a3646",
+    shirt: "#3a3646",
+    pants: "#2a2832",
+    eyes: "#2a2630",
+    portraits: {
+      normal: "characters/Gabi/covered.png",
+      covered: "characters/Gabi/covered.png",
+      uncovered: "characters/Gabi/uncovered.png",
+    },
+  },
+  alexandra: {
+    id: "alexandra",
+    name: "Alexandra",
+    voice: 1.05,
+    skin: "#f4c3a2",
+    hair: "#6a3520",
+    hairStyle: "long",
+    shirt: "#e8eaf0",
+    pants: "#3a4660",
+    eyes: "#6a95b0",
+    portraits: {
+      normal: "characters/Alexandra/base.png",
+      base: "characters/Alexandra/base.png",
+    },
+  },
+  radu: {
+    id: "radu",
+    name: "Radu",
+    voice: 0.9,
+    skin: "#e8b48c",
+    hair: "#2a2522",
+    hairStyle: "short",
+    shirt: "#c4dcae",
+    pants: "#3a3f4a",
+    eyes: "#5a3a26",
+    portraits: {
+      normal: "characters/Radu/base.png",
+      base: "characters/Radu/base.png",
+    },
+  },
+  jessie: {
+    id: "jessie",
+    name: "Jessie",
+    voice: 1.05,
+    skin: "#f6cdb2",
+    hair: "#e06a2a",
+    hairStyle: "long",
+    shirt: "#c88aa0",
+    pants: "#3a4660",
+    eyes: "#4aa89a",
+    portraits: {
+      normal: "characters/Jessie/base.png",
+      base: "characters/Jessie/base.png",
+    },
+  },
+  safa: {
+    id: "safa",
+    name: "Safa",
+    voice: 0.9,
+    skin: "#e8a97c",
+    hair: "#2a2523",
+    hairStyle: "short",
+    beardColor: "#2a2523",
+    look: { beard: "full" },
+    shirt: "#2f3857",
+    pants: "#3a3f4a",
+    eyes: "#4a3022",
+    portraits: {
+      normal: "characters/Safa/base.png",
+      base: "characters/Safa/base.png",
+    },
+  },
+  // Angel, el organizador de la fiesta. No es invitado: solo aparece en escenas.
+  angel: {
+    id: "angel",
+    name: "Angel",
+    voice: 0.9,
+    skin: "#eab48e",
+    hair: "#3a2620",
+    hairStyle: "spiky",
+    shirt: "#f4f4f6",
+    accent: "#2f6fd0", // color del bocadillo (la camiseta blanca no contrasta con el fondo crema)
+    pants: "#3a3f4a",
+    eyes: "#4a3022",
+    portraits: {
+      normal: "characters/Angel/base.png",
+      base: "characters/Angel/base.png",
+      mad: "characters/Angel/mad.png",
+      scared: "characters/Angel/scared.png",
+      smile: "characters/Angel/smile.png",
+      disapointed: "characters/Angel/disapointed.png",
+      disgust: "characters/Angel/disgust.png",
+    },
+  },
+  // Simone: el villano. Aparece en la carretera al empezar la batalla en coche y se convierte en el monstruo.
+  simone: {
+    id: "simone",
+    name: "Simone",
+    voice: 0.75,
+    skin: "#e2a77e",
+    hair: "#8a8178", // castaño canoso, tirando a gris
+    hairStyle: "short",
+    shirt: "#2a2220",
+    accent: "#8a3a2a", // la camiseta negra no luce como color del bocadillo
+    pants: "#3a3f4a",
+    eyes: "#5a8ab0",
+    portraits: {
+      normal: "characters/Simone/base.png",
+      base: "characters/Simone/base.png",
+      evil: "characters/Simone/evil.png",
+    },
+  },
+  // Sharon: punto 5 de la playa. Pelo corto rubio y vestido blanco con hojas verdes (como en sus fotos);
+  // mira el mar desde lo alto. Habla en scenes/scene_sharon.js.
+  sharon: {
+    id: "sharon",
+    name: "Sharon",
+    voice: 1.1,
+    skin: "#e9b48e",
+    hair: "#f2cf4a",
+    hairStyle: "short",
+    shirt: "#f4f2ea",
+    pants: "#f4f2ea",
+    print: "#4e9a50", // estampado de hojas verdes sobre la ropa (js/art.js)
+    accent: "#4e9a50", // el vestido blanco no contrasta como color del bocadillo
+    eyes: "#3b2c24",
+    portraits: {
+      normal: "characters/Sharon/base.png",
+      base: "characters/Sharon/base.png",
+      smile: "characters/Sharon/smile.png",
+      suspecting: "characters/Sharon/suspecting.png",
+      "suspecting.smile": "characters/Sharon/suspecting.smile.png",
+    },
+  },
 };
 
 // El protagonista siempre sale a la derecha en los diálogos.
@@ -230,15 +378,31 @@ const GUESTS = [
   { chat: "Diego", char: "diego" },
   { chat: "Oscar", char: "oscar" },
   { chat: "Tymen", char: "tymen" },
-  { chat: "Ricardo", char: "ricardo" },
+  { chat: "Ricardo", char: "ricardo", count: false }, // no cuenta para el contador de saludos
   { chat: "Mark", char: "mark" },
   { chat: "Jamie", char: "jamie" },
   { chat: "Carol", char: "carol" },
   { chat: "Owen", char: "owen" },
   { chat: "Keziah", char: "keziah" },
+  { chat: "Alexandra", char: "alexandra" },
+  { chat: "Radu", char: "radu" },
+  { chat: "Jessie", char: "jessie" },
+  { chat: "Safa", char: "safa" },
+  { chat: "Gabi", char: "gabi", count: false }, // no cuenta para el contador de saludos
 ];
-// Invitado en pruebas: nada más cargar aparece delante de Anthon y suelta su chat. Los demás esperan a su lado.
-const TEST_CHAT = "keziah";
+// Parejas que siempre aparecen una al lado de la otra en la piscina.
+const GUEST_PAIRS = [["mark", "carol"], ["radu", "alexandra"]];
+// Invitado que espera fuera del patio, donde antes había un globo azul, justo donde se sale de la zona de la terraza.
+const GUEST_AT_HOME = { char: "ricardo", x: 43, y: 14, dir: "down" };
+// Gabi, encapuchada, dos casillas a la derecha de Ricardo y también mirando al sur.
+const GUEST_HOODED = { char: "gabi", x: 45, y: 14, dir: "down" };
+// Grupos que se reparten al azar, cada uno por su zona [x0, y0, x1, y1] (nadie más que Ricardo queda fuera):
+//  - derecha de la piscina, donde estaba el edificio de los vestuarios
+//  - suroeste de la piscina (abajo a la izquierda), el resto, juntos
+const GUEST_ZONES = [
+  { area: [38, 60, 46, 69], chars: ["dominik", "diego", "alexandra", "muha", "oscar", "radu", "tymen", "vives", "jessie", "safa"] },
+  { area: [25, 59, 30, 69], chars: ["mark", "carol", "jamie", "owen", "keziah"] },
+];
 
 /*
  * Leyenda del mapa:
@@ -269,11 +433,11 @@ const TEST_CHAT = "keziah";
 // Fila de n adosados mediterráneos (blancos, de dos plantas) de 6 casillas de ancho desde (x, y).
 // extra: propiedades para casas concretas, por su posición en la fila ({ 2: { enter: ... } }).
 const NEIGHBOR_DOORS = [
-  "Llamas. Nadie contesta. Qué raro, a estas horas siempre hay alguien en casa...",
-  "Detrás de la puerta, un perro ladra como si le debieras dinero.",
-  "En el felpudo pone «Bienvenidos». La puerta, en cambio, está cerrada.",
-  "Huele a tortilla recién hecha. Pero no te abren.",
-  "Hay una nota en la puerta: «Volvemos enseguida». Lleva ahí desde 2019.",
+  "You knock. Nobody answers. Strange, there's always someone home at this hour...",
+  "Behind the door, a dog barks like you owe it money.",
+  "The doormat says “Welcome”. The door, however, is locked.",
+  "It smells like freshly made tortilla. But nobody opens up.",
+  "There's a note on the door: “Back soon”. It's been there since 2019.",
 ];
 function adosados(x, y, n, extra = {}) {
   return Array.from({ length: n }, (_, i) => ({
@@ -350,34 +514,34 @@ const MAPS = {
         wall: "#e0b98a",
         locked: [
           {
-            text: "La puerta de Lira está cerrada. Huele a infusión de hierbas.",
+            text: "Lira's door is closed. It smells like herbal tea.",
           },
         ],
       },
     ],
     signs: {
       "8,6": [
-        { text: "«Aldea Brisa»" },
-        { text: "Población: 4 habitantes y un número indeterminado de setas." },
+        { text: "“Breeze Village”" },
+        { text: "Population: 4 inhabitants and an undetermined number of mushrooms." },
       ],
       "13,16": [
-        { text: "Camino al Bosque Susurrante." },
+        { text: "Road to the Whispering Forest." },
         {
-          text: "CERRADO POR OBRAS (del destino). Vuelva en el próximo capítulo.",
+          text: "CLOSED FOR ROADWORKS (of destiny). Please come back next chapter.",
         },
       ],
     },
     decor: [{ type: "bobber", x: 7, y: 12 }],
     playerStart: { x: 5, y: 6, dir: "down" },
     intro: [
-      { text: "Una mañana tranquila en Aldea Brisa..." },
+      { text: "A quiet morning in Breeze Village..." },
       {
-        text: "El sol brilla, los pájaros cantan y alguien ha vuelto a perder su cesta de setas.",
+        text: "The sun is shining, the birds are singing, and someone has lost their mushroom basket again.",
       },
       {
         who: "kael",
         mood: "happy",
-        text: "¡Buenos días, mundo! Vamos a ver qué se cuenta la gente hoy.",
+        text: "Good morning, world! Let's see what everyone's up to today.",
       },
     ],
   },
@@ -468,7 +632,7 @@ const MAPS = {
       { type: "lightup", x: 5, y: 29, w: 7, h: 4 },
       { type: "plant", x: 1, y: 32 },
     ],
-    // «Nueva partida» empieza aquí, en el salón (la cinemática de despertar está en STORY.opening).
+    // «New Game» empieza aquí, en el salón (la cinemática de despertar está en STORY.opening).
     playerStart: { x: 7, y: 27, dir: "down" },
     exits: {
       "12,30": { to: "urba", x: 44, y: 9, dir: "right" },
@@ -479,11 +643,11 @@ const MAPS = {
       ...area(16, 4, 4, 3, [
         {
           who: "kael",
-          text: "Todavía está calentita... No. Fuerza de voluntad.",
+          text: "It's still warm... No. Willpower.",
         },
       ]),
       ...area(19, 3, 1, 1, [
-        { text: "El despertador marca las once y media." },
+        { text: "The alarm clock says half past eleven." },
         {
           who: "kael",
           mood: "surprised",
@@ -492,50 +656,50 @@ const MAPS = {
       ]),
       ...area(19, 7, 1, 1, [
         {
-          text: "Otra mesita con otro despertador. Este ni siquiera tiene pilas.",
+          text: "Another nightstand with another alarm clock. This one doesn't even have batteries.",
         },
       ]),
       ...area(8, 4, 1, 3, [
         {
-          text: "Una mesa con una lámpara y un montón de libros que nadie ha terminado.",
+          text: "A table with a lamp and a pile of books nobody has finished.",
         },
       ]),
       "9,2": [
         {
-          text: "Un calendario. Hay un día marcado con un círculo rojo enorme.",
+          text: "A calendar. One day is circled in huge red ink.",
         },
-        { who: "kael", text: "Tengo la sensación de que se me olvida algo..." },
+        { who: "kael", text: "I have the feeling I'm forgetting something..." },
       ],
       ...area(11, 2, 4, 1, [
-        { text: "La puerta de la terraza. Entra un sol que da gusto." },
-        { who: "kael", text: "Está atrancada. Como yo los lunes." },
+        { text: "The terrace door. The sunshine pouring in feels great." },
+        { who: "kael", text: "It's stuck. Just like me on Mondays." },
       ]),
       // cuarto pequeño
-      ...area(2, 2, 2, 1, [{ text: "Hace un día precioso ahí fuera." }]),
+      ...area(2, 2, 2, 1, [{ text: "It's a beautiful day out there." }]),
       ...area(5, 3, 2, 3, [
         {
-          text: "Una cama perfectamente hecha. Aquí no ha dormido nadie... o alguien muy ordenado.",
+          text: "A perfectly made bed. Nobody slept here... or someone very tidy did.",
         },
       ]),
       ...area(1, 7, 1, 2, [
         {
-          text: "El ordenador está en suspensión. En la pantalla hay una nota: «¡No olvides lo de hoy!».",
+          text: "The computer is asleep. There's a note on the screen: “Don't forget about today!”",
         },
         {
           who: "kael",
           mood: "surprised",
-          text: "¿Lo de hoy? ¿Qué es lo de hoy?",
+          text: "Today? What's today?",
         },
       ]),
       ...area(1, 10, 1, 2, [
         {
-          text: "Una partida a medias. Mejor no tocar nada si quieres seguir vivo.",
+          text: "A half-finished game. Better not touch anything if you want to stay alive.",
         },
       ]),
       // baño
-      "15,10": [{ text: "Mejor no." }],
+      "15,10": [{ text: "Better not." }],
       "15,15": [
-        { text: "Te miras en el espejo." },
+        { text: "You look in the mirror." },
         {
           who: "kael",
           mood: "surprised",
@@ -543,63 +707,63 @@ const MAPS = {
         },
       ],
       ...area(18, 10, 2, 4, [
-        { text: "La bañera. Un patito de goma te vigila en silencio." },
+        { text: "The bathtub. A rubber duck watches you in silence." },
       ]),
       // cocina
       ...area(1, 16, 6, 1, [
-        { text: "La cocina está recogida. Sospechosamente recogida." },
+        { text: "The kitchen is tidy. Suspiciously tidy." },
       ]),
       ...area(1, 17, 1, 2, [
         {
-          text: "Abres la nevera. Hay un hueco enorme, como si alguien se hubiera llevado algo muy grande.",
+          text: "You open the fridge. There's a huge gap, as if someone took something very big.",
         },
-        { who: "kael", text: "...¿Y mi yogur?" },
+        { who: "kael", text: "...Where's my yogurt?" },
       ]),
       ...area(1, 19, 6, 1, [
         {
-          text: "Hay una lista en la encimera: «globos, velas, confeti...». El resto está tachado.",
+          text: "There's a list on the counter: “balloons, candles, confetti...”. The rest is crossed out.",
         },
       ]),
       // cuarto de las dos camas
       ...area(13, 18, 7, 1, [
-        { text: "El armario empotrado. Está tan lleno que da miedo abrirlo." },
-        { who: "kael", text: "Mejor dejarlo así. Por la seguridad de todos." },
+        { text: "The built-in wardrobe. It's so full it's scary to open." },
+        { who: "kael", text: "Better leave it like that. For everyone's safety." },
       ]),
       ...area(19, 20, 1, 2, [
-        { text: "Un montón de ropa doblada. Bueno, «doblada»." },
+        { text: "A pile of folded clothes. Well, “folded”." },
       ]),
       ...area(13, 23, 2, 3, [
-        { text: "La cama está vacía. Qué silencio hay hoy en casa..." },
+        { text: "The bed is empty. It's so quiet at home today..." },
       ]),
       ...area(18, 23, 2, 3, [
-        { text: "La cama está vacía. Qué silencio hay hoy en casa..." },
+        { text: "The bed is empty. It's so quiet at home today..." },
       ]),
       ...area(15, 26, 3, 1, [
-        { text: "Por la ventana se ve el patio. Ni un alma." },
+        { text: "Through the window you can see the courtyard. Not a soul." },
       ]),
       // salón
       ...area(1, 20, 6, 2, [
         {
-          text: "El sofá. Tiene la forma exacta de alguien que se pasó aquí todo el domingo.",
+          text: "The sofa. It has the exact shape of someone who spent all Sunday here.",
         },
       ]),
       ...area(1, 22, 2, 5, [
         {
-          text: "El sofá. Tiene la forma exacta de alguien que se pasó aquí todo el domingo.",
+          text: "The sofa. It has the exact shape of someone who spent all Sunday here.",
         },
       ]),
       ...area(4, 23, 1, 3, [
-        { text: "El mando de la tele. Le faltan las pilas, como siempre." },
+        { text: "The TV remote. The batteries are missing, as always." },
       ]),
       ...area(11, 22, 1, 3, [
         {
-          text: "La tele está apagada. En el reflejo se ve a alguien despeinado...",
+          text: "The TV is off. In the reflection you see someone with messy hair...",
         },
-        { who: "kael", text: "Ah, que soy yo." },
+        { who: "kael", text: "Oh, that's me." },
       ]),
       ...area(5, 33, 7, 1, [
         {
-          text: "La terraza del salón. Está cerrada, pero entra una luz muy bonita.",
+          text: "The living room terrace. It's closed, but a lovely light comes in.",
         },
       ]),
     },
@@ -626,7 +790,7 @@ const MAPS = {
       "T..........................=w.....w.....w:::::w=.,...w:::.....-w:::.....-T",
       "T..........................=wb....wb....w:::::w=.....::::.....-::::.,...-T",
       "T.Y.....Y......Y...........=www.wwwww.wwwg:wwww=.....wwww.....-wwww.....-T",
-      "T.....,....Y.,.............=...............g...=.....w:::.....-w:::.....-T",
+      "T.....,....Y.,.............=...................=.....w:::.....-w:::.....-T",
       "T........Y.................=...........g.......=.....::::.....-::::.....-T",
       "T.....................======..................======.wwww.....-wwww.....-T",
       "T---------------------=........Y...................=---------------------T",
@@ -658,30 +822,30 @@ const MAPS = {
       "T---------------------=.....b.............T........=---------------------T",
       "T-w::..........::::w..=.......Y.............,...Y.n=.w:::.....-w:::.....-T",
       "T-:::..........:::::..=............g..g............=.::::...,.-::::.....-T",
-      "T-www..........wwwww..=......hhhhhhh::hhhhhhh.,....=.wwww.....-wwww.....-T",
-      "T-w::..........::::w..=......h::::::::::::::h......=.w:::.....-w:::.....-T",
-      "T-:::..........:::::..=......h::::::::::::::h..Y...=.::::.....-::::.....-T",
-      "T-www...,......wwwww..=..Y.Y.h:PPPPPPPPPP:::h......=.wwww.....-wwww.....-T",
-      "T-w::.,.,,.....::::w..=......h:PPPPPPPPPP:::h......=.w:::.....-w:::.....-T",
-      "T-:::....,.....:::::..=..Y...h:PPPPPPPPPP:::h......=.::::.....-::::.....-T",
-      "T-www..........wwwww..=......h:PPPPPPPPPP:::h......=.wwww.....-wwww.....-T",
-      "T-w::..........::::w..=.T....h:PPPPPPPPPP:::h......=.w:::.....-w:::.....-T",
-      "T-:::..,.......:::::..=......h:PPPPPPPPPP:::h......=.::::.....-::::...,.-T",
-      "T-www..........wwwww..=......h:PPPPPPPPPP:::h....Y.=.wwww.....-wwww.....-T",
-      "T---------------------=..b...h:PPPPPPP::::::h......=---------------------T",
-      "T-w::..........::::w..=......h:PPPPPPP::::::h...Y..=.w:::.....-w:::.....-T",
-      "T-:::..........:::::..=..Y...h:PPPPPPP::::::h......=.::::...,.-::::.....-T",
-      "T-www..........wwwww..=......h:PPPPPPP::::::h......=.wwww.....-wwww..,..-T",
-      "T-w::..........::::w..=..Y...h:PPPPPPP::::::h......=.w:::.....-w:::.....-T",
-      "T-:::..........:::::..=......h:PPPPPPP::::::h......=.::::.....-::::.....-T",
-      "T-www..........wwwww..=......h:PPPPPPP::::::h..b...=.wwww.....-wwww.....-T",
-      "T-w::.....,....::::w..=......h:PPPPPPP::::::h......=.w:::.....-w:::.....-T",
-      "T-:::........,.:::::..=......h:PPPPPPP::::::h......=.::::.....-::::.....-T",
-      "T-www..........wwwww..=...b..h:PPPPPPP::::::h......=.wwww.....-wwww.....-T",
-      "T-w::..........::::w..=......h:PPPPPPP::::::h..b...=.w:::.....-w:::.....-T",
-      "T-:::..........:::::..=..Y.b.h:PPPPPPP::::::h......=.::::.....-::::...,.-T",
-      "T-www..........wwwww..=......h::::::::::::::h....Y.=.wwww.....-wwww.....-T",
-      "T---------------------=......hhhhhhhhhhhhhhhh......=---------------------T",
+      "T-www..........wwwww..=.............::........,....=.wwww.....-wwww.....-T",
+      "T-w::..........::::w..=.......::::::::::::::.......=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=.......::::::::::::::...Y...=.::::.....-::::.....-T",
+      "T-www...,......wwwww..=.......:PPPPPPPPPP:::.......=.wwww.....-wwww.....-T",
+      "T-w::.,.,,.....::::w..=.......:PPPPPPPPPP:::.......=.w:::.....-w:::.....-T",
+      "T-:::....,.....:::::..=..Y....:PPPPPPPPPP:::.......=.::::.....-::::.....-T",
+      "T-www..........wwwww..=.......:PPPPPPPPPP:::.......=.wwww.....-wwww.....-T",
+      "T-w::..........::::w..=.T.....:PPPPPPPPPP:::.......=.w:::.....-w:::.....-T",
+      "T-:::..,.......:::::..=.......:PPPPPPPPPP:::.......=.::::.....-::::...,.-T",
+      "T-www..........wwwww..=.......:PPPPPPPPPP:::.....Y.=.wwww.....-wwww.....-T",
+      "T---------------------=..b....:PPPPPPP::::::.......=---------------------T",
+      "T-w::..........::::w..=.......:PPPPPPP::::::....Y..=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=..Y....:PPPPPPP::::::.......=.::::...,.-::::.....-T",
+      "T-www..........wwwww..=.......:PPPPPPP::::::.......=.wwww.....-wwww..,..-T",
+      "T-w::..........::::w..=..Y....:PPPPPPP::::::.......=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=.......:PPPPPPP::::::.......=.::::.....-::::.....-T",
+      "T-www..........wwwww..=.......:PPPPPPP::::::...b...=.wwww.....-wwww.....-T",
+      "T-w::.....,....::::w..=.......:PPPPPPP::::::.......=.w:::.....-w:::.....-T",
+      "T-:::........,.:::::..=.......:PPPPPPP::::::.......=.::::.....-::::.....-T",
+      "T-www..........wwwww..=...b...:PPPPPPP::::::.......=.wwww.....-wwww.....-T",
+      "T-w::..........::::w..=.......:PPPPPPP::::::...b...=.w:::.....-w:::.....-T",
+      "T-:::..........:::::..=..Y.b..:PPPPPPP::::::.......=.::::.....-::::...,.-T",
+      "T-www..........wwwww..=.......::::::::::::::.....Y.=.wwww.....-wwww.....-T",
+      "T---------------------=............................=---------------------T",
       "T-w::..........::::w..=............................=.w:::.....-w:::.....-T",
       "T-:::..........:::::..=........,..........b.....Y..=.::::.....-::::.....-T",
       "T-www..........wwwww..=............................=.wwww.....-wwww.....-T",
@@ -740,19 +904,6 @@ const MAPS = {
         ...adosadosColumna(57, y, n, "left"),
         ...adosadosColumna(67, y, n, "left"),
       ]),
-      {
-        x: 41,
-        y: 65,
-        w: 3,
-        h: 2,
-        style: "med",
-        floors: 1,
-        locked: [
-          {
-            text: "Vestuarios de la piscina. Dentro alguien canta en la ducha... desafinando.",
-          },
-        ],
-      },
     ],
     furniture: [
       // coches aparcados en la carretera de detrás de casa
@@ -786,242 +937,254 @@ const MAPS = {
       { type: "gift", x: 43, y: 58 },
       { type: "speaker", x: 30, y: 51 },
       { type: "speaker", x: 30, y: 60 },
-      { type: "lounger", x: 39, y: 61 },
-      { type: "lounger", x: 41, y: 61 },
       { type: "float", x: 34, y: 52 },
+      // zona de baile de la derecha: postes para las luces de fiesta y altavoces
+      { type: "pole", x: 38, y: 60 },
+      { type: "pole", x: 44, y: 60 },
+      { type: "pole", x: 38, y: 68 },
+      { type: "pole", x: 44, y: 68 },
+      { type: "speaker", x: 38, y: 64 },
+      { type: "speaker", x: 44, y: 65 },
+      { type: "speaker", x: 41, y: 69 },
     ],
     decor: [
       { type: "bunting", x0: 30, x1: 43, y: 47 },
+      { type: "partylights", x0: 38, x1: 44, y: 60 },
+      { type: "partylights", x0: 38, x1: 44, y: 68 },
       { type: "confetti", area: [30, 47, 43, 68] },
     ],
     playerStart: { x: 44, y: 9, dir: "right" },
     intro: [
-      { who: "kael", text: "Qué silencio hay hoy en la urbanización..." },
-      { who: "kael", mood: "surprised", text: "¿Eso de la verja es un globo?" },
+      { who: "kael", text: "It's so quiet in the neighborhood today..." },
+      { who: "kael", mood: "surprised", text: "Is that a balloon on the fence?" },
     ],
     signs: {
       "41,13": [
         {
-          text: "Un globo atado a la verja del patio. Lleva una nota colgando:",
+          text: "A balloon tied to the courtyard fence. It has a note hanging from it:",
         },
-        { text: "«Sigue los globos. Y date prisa, dormilón.»" },
+        { text: "“Follow the balloons. And hurry up, sleepyhead.”" },
         {
           who: "kael",
           mood: "surprised",
-          text: "¿Más globos? Ahí hay otro...",
+          text: "More balloons? There's another one...",
         },
       ],
       "50,44": [
-        { text: "Una nota clavada en el césped:" },
-        { text: "«¿Por aquí? ¡Frío, frío! Vuelve con los globos.»" },
+        { text: "A note stuck in the grass:" },
+        { text: "“This way? Cold, cold! Go back to the balloons.”" },
         {
           who: "kael",
-          text: "Alguien se ha tomado muchas molestias con esto.",
+          text: "Someone went to a lot of trouble for this.",
         },
       ],
       "36,81": [
-        { text: "Otra nota, medio enterrada en la arena:" },
+        { text: "Another note, half buried in the sand:" },
         {
-          text: "«Aquí solo hay arena y un cubo sin pala. La fiesta NO es en los columpios.»",
+          text: "“There's only sand and a bucket without a shovel here. The party is NOT at the swings.”",
         },
       ],
       "39,15": [
         {
-          text: "Otro globo. Y más allá, por el camino del parque, se ve otro.",
+          text: "Another balloon. And further along the park path, there's another.",
         },
       ],
       "35,29": [
-        { text: "Un globo atado a una palmera... no, a una estaca." },
+        { text: "A balloon tied to a palm tree... no, to a stake." },
         {
           who: "kael",
-          text: "Cuántos globos. Alguien ha vaciado una tienda entera.",
+          text: "So many balloons. Someone emptied an entire shop.",
         },
       ],
       "35,45": [
-        { text: "Un globo con un número enorme dibujado." },
+        { text: "A balloon with a huge number drawn on it." },
         {
           who: "kael",
           mood: "surprised",
-          text: "Espera... ¿ese número es mi edad?",
+          text: "Wait... is that number my age?",
         },
       ],
       "38,45": [
         {
-          text: "Al otro lado del seto se oyen risas y alguien que manda callar a todo el mundo.",
+          text: "On the other side of the hedge you hear laughter and someone shushing everybody.",
         },
-        { who: "kael", text: "¿Qué estará pasando ahí dentro?" },
+        { who: "kael", text: "What could be going on in there?" },
       ],
       ...area(41, 9, 2, 1, [
         {
-          text: "La puerta de la terraza del salón, vista desde fuera. Está cerrada.",
+          text: "The living room terrace door, seen from outside. It's closed.",
         },
       ]),
       "44,11": [
-        { text: "La mesa del patio. Alguien ha dejado una limonada a medias." },
+        { text: "The courtyard table. Someone left a half-drunk lemonade." },
       ],
       "45,11": [
-        { text: "La mesa del patio. Alguien ha dejado una limonada a medias." },
+        { text: "The courtyard table. Someone left a half-drunk lemonade." },
       ],
       "39,57": [
         {
-          text: "Una tarta enorme con velas. Todavía no está empezada. Por poco.",
+          text: "A huge cake with candles. Not started yet. Barely.",
         },
       ],
       "40,57": [
         {
-          text: "Una tarta enorme con velas. Todavía no está empezada. Por poco.",
+          text: "A huge cake with candles. Not started yet. Barely.",
         },
       ],
-      "41,57": [{ text: "Vasos, refrescos y una montaña de patatas fritas." }],
+      "41,57": [{ text: "Cups, soft drinks and a mountain of chips." }],
       "43,57": [
         {
-          text: "Una pila de regalos. Uno de ellos hace tictac. Mejor no preguntar.",
+          text: "A pile of presents. One of them is ticking. Better not ask.",
         },
       ],
       "43,58": [
         {
-          text: "Una pila de regalos. Uno de ellos hace tictac. Mejor no preguntar.",
+          text: "A pile of presents. One of them is ticking. Better not ask.",
         },
       ],
       "31,84": [
         {
-          text: "Los columpios. Hoy no hay nadie: todo el mundo está en otra parte.",
+          text: "The swings. Nobody's here today: everyone is somewhere else.",
         },
       ],
-      "39,84": [{ text: "El tobogán quema como una sartén. Mejor no." }],
+      "39,84": [{ text: "The slide is hot as a frying pan. Better not." }],
     },
   },
 
-  // Escenario 3: la playa, con la misma orientación que la foto aérea: el mar arriba y la carretera abajo.
-  // Se empieza en la acera (punto 1), junto al coche estrellado contra una palmera; la carretera está
-  // cortada con conos a los dos lados, así que solo se puede subir a la arena. A la izquierda, el recinto
-  // cerrado de las palmeras (punto 4); a la derecha, el jardín amurallado de la casa grande.
-  // La arena sube hasta el agua (punto 5). Desde ahí, una cuesta de arenisca lleva al mirador (punto 2)
-  // y un caminito entre piedras (que no se pueden pisar) llega a la puerta de la casa blanca grande (punto 3).
-  // A la izquierda de la línea roja la playa sigue, pero no se puede entrar (Z).
-  // Suelos propios: m mar, R roca volcánica, k pedregal, c caminito, u cuesta, Z arena que no se pisa.
+  // Escenario 3: la playa, según el boceto: el mar arriba y la carretera abajo.
+  // Se empieza en la acera (punto 1), junto al coche estrellado contra una palmera. Un pasillo de arena
+  // entre muros blancos (2) sube hasta la playa. A la izquierda de la columna 21 (línea 3) la playa sigue,
+  // pero Anthon se da la vuelta (`turnBack`). A la derecha, una meseta de arena más alta (punto 7):
+  // se sube por una rampa de arena en el cortado y desde arriba se llega a la puerta trasera de la casa
+  // blanca grande (punto 4) y a Sharon, que mira el mar (punto 5).
+  // Suelos propios: m mar, R piedras con arena, z arena (abajo), y arena alta (meseta),
+  // H cortado de arenisca, E rampa de arena. Entre la arena de abajo y la alta solo se pasa por la rampa.
   playa: {
-    name: "La playa",
+    name: "Mazarrón Beach",
+    night: true, // toda la playa transcurre de noche (tinte nocturno en renderWorld)
     base: "sand", // bajo palmeras, muros y carteles hay arena, no hierba
     tiles: [
-      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
-      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
-      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
-      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
-      "mmmmmmmmmmmmmmmmmmmmmmmmmmRRmmmmmmmmmmmm",
-      "mmmmmmmmmmmmmmmmRRRRRRRRRRRRRRRRRRmmmmmm",
-      "mmmmmmmmmmmmmmRRRRRRRRRRRRRRRRRRRRRRRmmm",
-      "mmmmmmmmmmmmmRRRuuukkkkkkkkkkkkkkkkRRRRR",
-      "mmmmmmmmmmmRRRRRuuuccckkkkkkkkkkkkkRRRRR",
-      "mmmRmmmmmRRRRRRRuuukkckkkkkkkkkkkkkRRRRR",
-      "mmmRRmmmRRRRRRRuuukkkcccckkkkkkkkkkRRRRR",
-      "mmmmmmmmmRRRRRuuukkkkkkkckkkkkkkkkkRRRRR",
-      "mmmmmmmmmmmmmuuukkkkkkkkckkkkkkkkkkRRRRR",
-      "mmmmmmmmmmmmzzzzszkkkkkkckkkkkkkkkkRRRRR",
-      "mmmmmmmmmmmzzzzzzzzkkkkkckkkkkkkkkkRRRRR",
-      "mmmmmmmmZZzzzzzzzzzzzkkkckkkkkkkkkkkkkYk",
-      "mmmmZZZZZZZzzzzzzzzzzzkkckkkkkkkkkkYkkkk",
-      "mZZZZZZZZZZzzzzzzzzzzzzzkkkkkkkkkkkkkkkk",
-      "ZZZZZZZZZZZZzzzzzzzzzzzzzkkkkkkkkkkkkYkk",
-      "ZZZZZZZZZZZZzzzzzzzzzzzzzzkkkkkkkkkkkkkk",
-      "ZZZZZZZZZZZZZzzzzzzzzzzzzzzwzzzzzzzzzzzz",
-      "wwwwwwwwwwwwwwwwwwwzzzzzzzzwzzzzzzYzzzYz",
-      "zzzzzzYzzYzzzzzbzzwzzzzzzzzwzYzzbzzzzzzz",
-      "zzYzYzzzzzzbzzYzzYwzzzzzzzzwzzzzzzzzzbzz",
-      "zzzzzzzzYzYzYzzzzzwzzzzzzzzwzzzYzzzzYzzz",
-      "zYzzYzzbzzzzzzzYzzwzzzzzzzzwzzzzzzzzzzzz",
-      "zzzzzzzzzzzYzbzzzbwzzzzzzzzwzYzzzzzbzzzz",
-      "zzzYzzzzzzzzzzzzYzwzzzzzzzzwzzzzzYzzzYzz",
-      "zYzzzzzzzzzzzYzzzzwzzzzzzzzwzzzzzzzzzzzz",
-      "wwwwwwwwwwwwwwwwwwwzzzzzzzzwwwwwwwwwwwww",
-      "---------------------Y------------------",
-      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      "----------------------------------------",
-      "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
-      "zYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzz",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmyyyyymyyyyyyyRRRmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmyyymyyyyyyyyyyyyyRRRRRmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmyyymyyyyyyyyyyyyyRRRRRRR",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmyyyyyyyyyyyyyyyyyyyRRRRRRR",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmzzzzzzzyyyyyyyyyyyyyyyyyyyRRRRRRR",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmzzzzzzzzyyyyyyyyyyyyyyyyyyyRRRRRRR",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmzzzzzzzzRyyyyyyyyyyyyyyyyyyyRRRRRRR",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmzzzzzzzzzRyyyyyRRRRRRRyyyyyyyRRRRRRR",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmzzzzzzzzzRyyyyyRRRRRRRyyyyyyyRRRRRRR",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmzzzzzzzzzzRHHEEHRRRRRRRyyyyyyyRRRRRRR",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmzzzzzzzzzzzRHHEEHRRRRRRRyyyyyyyRRRRRRR",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmzzzzzzzzzzzzRzzzzzRRRRRRRyyyyyyyRRRRRRR",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzRRRRRRRyyyyyyyRRRRRRR",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzwwwwww...........wwww",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzw....................",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzw.Y................Y.",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzw....................",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzw...b.............b..",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzw....................",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzw.Y................Y.",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzw....................",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzw........b...b.......",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzw..Y...Y...Y...Y...Y.",
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzw....................",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwzzzzzzzzzzzzwwwwwwwwwwwwwwwwwwwww",
+      "......................................wzzzzzzzzzzzzw....................",
+      "........................Y.........b...wzzzzzzzzzzzzw.........Y..........",
+      "...Y....Y....b.....Y.........Y........wzzzzzzzzzzzzw...Y.........Y....Y.",
+      "......................................wzzzzzzzzzzzzw....................",
+      "....Y.............b....Y....b.........wzzzzzzzzzzzzw...b..........b.....",
+      ".........Y....b...................b...wzzzzzzzzzzzzw.........Y........Y.",
+      "......................................wzzzzzzzzzzzzw....................",
+      "...Y.....Y....Y.........Y...Y.........wzzzzzzzzzzzzw...Y..........Y.....",
+      "..................b..............Y....wzzzzzzzzzzzzw........Y.........Y.",
+      "......................................wzzzzzzzzzzzzw....................",
+      "...................Y........b.....b...wzzzzzzzzzzzzw....................",
+      "...Y.....Y....Y........Y..............wzzzzzzzzzzzzw....Y....b....Y...b.",
+      "......................................wzzzzzzzzzzzzw....................",
+      "...Y....Y.....Y....b....b....Y...Y....wzzzzzzzzzzzzw...Y.....Y....Y...Y.",
+      "......................................wzzzzzzzzzzzzw....................",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwzzzzzzzzzzzzwwwwwwwwwwwwwwwwwwwww",
+      "------------------------------------------Y-----------------------------",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "------------------------------------------------------------------------",
+      "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww",
+      "zYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzzzYzz",
     ],
+    // zonas por las que no se pasa: al intentarlo, Anthon se da la vuelta (x0, y0, x1, y1)
+    turnBack: [[0, 21, 20, 32]],
+    // lo que se ve al mirar el mar (m) desde la orilla
+    seaText: [{ text: "The water is cold and clear." }],
     houses: [
-      // dentro del recinto de las palmeras asoma un chalé de tejado rojo
-      { x: 5, y: 26, w: 5, h: 3, roof: "#c8553d", wall: "#f3eee4" },
-      // la casa blanca grande del punto 3; el caminito llega a su puerta por la izquierda
+      // la casa blanca grande del punto 4: su puerta da arriba, a la meseta
       {
-        x: 25,
-        y: 13,
-        w: 9,
-        h: 6,
+        x: 57,
+        y: 22,
+        w: 11,
+        h: 7,
         style: "med",
-        face: "left",
+        face: "up",
         locked: [
-          { text: "Una casa blanca enorme, con el mar entero de jardín." },
-          { text: "Llamas. Nadie contesta. Solo se oyen las olas." },
+          { text: "The back door of a huge white house. It opens straight onto the rocks and the sea." },
+          { text: "You knock. Nobody answers. You can only hear the waves." },
         ],
       },
     ],
-    furniture: [
-      { type: "carcrash", x: 19, y: 30 },
-      // conos de obra: la carretera está cortada a izquierda y derecha
-      ...[30, 31, 32, 33].flatMap((y) => [
-        { type: "cone", x: 9, y },
-        { type: "cone", x: 30, y },
-      ]),
+    npcs: [
+      // punto 5: Sharon mira el mar desde lo alto (su escena salta al subir la rampa: scenes/scene_sharon.js)
+      { char: "sharon", x: 54, y: 9, dir: "up" },
     ],
-    decor: [{ type: "smoke", x: 20, y: 30 }],
-    playerStart: { x: 18, y: 30, dir: "right" },
+    furniture: [
+      // la roca enorme en el mar
+      { type: "bigrock", x: 32, y: 7 },
+      { type: "carcrash", x: 40, y: 50 },
+      // conos de obra: la carretera está cortada a izquierda y derecha
+      ...[50, 51, 52, 53].flatMap((y) => [
+        { type: "cone", x: 27, y },
+        { type: "cone", x: 61, y },
+      ]),
+      // felpudo delante de la puerta trasera de la casa grande
+      { type: "doormat", x: 62, y: 21 },
+    ],
+    decor: [{ type: "smoke", x: 41, y: 50 }],
+    playerStart: { x: 39, y: 50, dir: "up" },
     signs: {
-      ...area(19, 30, 2, 1, [
+      ...area(40, 50, 2, 1, [
         {
-          text: "El descapotable ha quedado empotrado contra la palmera. Del capó sale un humo que no huele nada bien.",
+          text: "The convertible is wedged against the palm tree. Smoke is coming out of the hood and it doesn't smell good.",
         },
-        { who: "kael", text: "Bueno... el monstruo ha quedado peor. Creo." },
+        { who: "kael", text: "Well... the monster came out worse. I think." },
       ]),
-      "21,30": [{ text: "La palmera ni se ha inmutado. Ella ha ganado." }],
-      ...area(9, 30, 1, 4, [
-        { text: "Conos de obra. La carretera está cortada por aquí." },
+      "42,50": [{ text: "The palm tree didn't even flinch. It won." }],
+      ...area(27, 50, 1, 4, [
+        { text: "Traffic cones. The road is closed here." },
       ]),
-      ...area(30, 30, 1, 4, [
-        { text: "Conos de obra. La carretera está cortada por aquí." },
+      ...area(61, 50, 1, 4, [
+        { text: "Traffic cones. The road is closed here." },
       ]),
-      ...area(18, 21, 1, 8, [
-        {
-          text: "Un muro blanco. Detrás hay tantas palmeras que no se ve nada.",
-        },
+      ...area(38, 33, 1, 17, [
+        { text: "A white wall. Behind it there are so many palm trees you can't see anything." },
       ]),
-      ...area(13, 21, 5, 1, [
-        {
-          text: "Un muro blanco. Detrás hay tantas palmeras que no se ve nada.",
-        },
+      ...area(21, 33, 17, 1, [
+        { text: "A white wall. Behind it there's a garden full of palm trees." },
       ]),
-      ...area(27, 20, 1, 9, [
-        {
-          text: "Al otro lado del muro hay un jardín con palmeras. Y un cartel de «Propiedad privada».",
-        },
+      ...area(51, 22, 1, 28, [
+        { text: "On the other side of the wall there's a garden with palm trees. And a “Private property” sign." },
       ]),
-      "16,13": [
-        { text: "«Antigua entrada de abastecimiento»." },
-        { text: "Al lado, una cuesta de arenisca sube hacia las rocas." },
-      ],
-      ...area(12, 12, 1, 1, [
-        {
-          text: "El agua está fría y transparente. Hasta aquí llega la playa.",
-        },
-      ]),
-      ...area(11, 13, 1, 1, [
-        {
-          text: "El agua está fría y transparente. Hasta aquí llega la playa.",
-        },
-      ]),
-      ...area(10, 14, 1, 1, [
-        {
-          text: "El agua está fría y transparente. Hasta aquí llega la playa.",
-        },
-      ]),
-      ...area(16, 6, 3, 1, [
-        {
-          text: "Desde aquí arriba se ve todo el mar. Las olas rompen contra las rocas negras.",
-        },
-      ]),
-      ...area(15, 7, 1, 2, [{ text: "Rocas negras, resbaladizas. Mejor no." }]),
+      ...area(46, 19, 2, 1, [{ text: "A sandstone cliff. You can't climb up here." }]),
+      "50,19": [{ text: "A sandstone cliff. You can't climb up here." }],
+      ...area(45, 15, 1, 6, [{ text: "Loose rocks half buried in the sand. Better stay out." }]),
+      ...area(51, 16, 7, 6, [{ text: "Loose rocks half buried in the sand. Better stay out." }]),
     },
   },
 };
@@ -1039,6 +1202,7 @@ const MAPS = {
  *  { face: 'player' }              todos los NPCs se giran hacia el protagonista
  *  { minigame: 'chase' }           batalla en coche (en el estilo elegido en el título); la cinemática sigue al ganarla
  * Al terminar, el jugador toma el control.
+ * Opcional: `cast: [{ char, x, y, dir }]` pone esos personajes en el mapa al empezar la historia.
  */
 const STORY = {
   opening: {
@@ -1065,15 +1229,20 @@ const STORY = {
       { wait: 25 },
       {
         say: [
-          { who: "kael", text: "Ay, siempre me despierto en la mejor parte." },
+          { who: "kael", text: "Ugh, I always wake up at the best part." },
         ],
       },
     ],
   },
   // Tras la batalla: el coche acaba empotrado contra una palmera junto a la playa (punto 1).
+  // Anthon, Angel y Ricardo aparecen juntos en la acera, al lado del coche.
   playa: {
     map: "playa",
-    spawn: { x: 18, y: 30, dir: "right" },
+    spawn: { x: 39, y: 50, dir: "up" },
+    cast: [
+      { char: "angel", x: 41, y: 51, dir: "up" }, // delante del coche, mirándolo (el capó humea en 41,50)
+      { char: "ricardo", x: 37, y: 50, dir: "up" },
+    ],
     steps: [
       { dark: 1 },
       { wait: 40 },
@@ -1081,13 +1250,12 @@ const STORY = {
       { wait: 100 },
       { fade: 0, frames: 150 },
       { wait: 30 },
+      { face: ["ricardo"] }, // Angel sigue mirando el coche
       {
         say: [
-          {
-            text: "El descapotable acaba su carrera contra una palmera, justo al lado de la playa.",
-          },
-          { who: "kael", mood: "surprised", text: "...Sigo vivo. Creo." },
-          { who: "kael", text: "Huele a mar. ¿Dónde narices he acabado?" },
+          { who: "angel", mood: "smile", text: "The car's not working. I'm going to try to fix it." },
+          { who: "ricardo", mood: "base", text: "Call the insurance, you won't be able to fix it." },
+          { who: "angel", mood: "base", text: "Anthon, go to the beach if you want, there's not much to do here." },
         ],
       },
     ],
@@ -1095,18 +1263,18 @@ const STORY = {
 };
 
 /*
- * Niveles que se pueden elegir desde el título («Elegir nivel»). Cada uno empieza de una de estas formas:
+ * Niveles que se pueden elegir desde el título («Choose Level»). Cada uno empieza de una de estas formas:
  *  story: 'clave de STORY'   la cinemática de esa historia
  *  map: 'clave de MAPS'      en ese mapa, en su `playerStart`
- *  minigame: 'chase'         la batalla en coche (al ganar se vuelve al título)
+ *  minigame: 'chase'         la batalla en coche (al ganar se vuelve al título, o se sigue con `then: 'clave de STORY'`)
  *  soon: true                todavía no existe: sale en la lista como «próximamente»
- * «Nueva partida» empieza por el primero.
+ * «New Game» empieza por el primero.
  */
 const LEVELS = [
-  { name: "La casa", map: "casa" },
-  { name: "El patio", map: "urba" },
-  { name: "La batalla contra el monstruo", minigame: "chase" },
-  { name: "La playa", story: "playa" },
+  { name: "The House", map: "casa" },
+  { name: "The Courtyard", map: "urba" },
+  { name: "The Battle Against the Monster", minigame: "chase", then: "playa" }, // al ganar se pasa a la playa
+  { name: "The Beach", story: "playa" },
 ];
 
 // Mapas donde suena la música alegre de la fase 1 (js/audio.js).
@@ -1114,37 +1282,39 @@ const MUSIC_MAPS = new Set(["casa", "urba"]);
 
 // Batalla en coche contra el monstruo (js/battle.js y js/chasetop.js).
 const CHASE = {
-  boss: "EL MONSTRUO",
+  boss: "THE MONSTER",
   hp: 30, // balas que aguanta antes de explotar
+  carHp: 5, // jeringuillas que aguanta el coche (la barra nunca llega a cero: con 1 salta scenes/scene_gabi.js)
+  syringeEvery: 85, // frames entre jeringuillas al empezar; lanza más rápido cuanto menos vida le queda
   magazine: 10, // balas por cargador
   reloadFrames: 120, // recarga al vaciar el cargador (60 = 1 s)
 };
 
 const CREDITS = [
-  { h: "ALDEA BRISA", big: true },
-  { t: "un pequeño prototipo RPG" },
+  { h: "BREEZE VILLAGE", big: true },
+  { t: "a small RPG prototype" },
   {},
-  { h: "Idea y dirección" },
+  { h: "Idea and Direction" },
   { t: "Angel Quesada" },
   {},
-  { h: "Programación" },
+  { h: "Programming" },
   { t: "Claude" },
   {},
-  { h: "Arte" },
-  { t: "Pixel art generado por código" },
+  { h: "Art" },
+  { t: "Pixel art generated by code" },
   {},
   { h: "Sonido" },
-  { t: "Sintetizado en tiempo real con Web Audio" },
+  { t: "Synthesized in real time with Web Audio" },
   {},
-  { h: "Tipografía" },
+  { h: "Typography" },
   { t: "Nunito" },
   {},
-  { h: "Reparto" },
+  { h: "Cast" },
   {
     t: "Anthon · Dominik · Vives · Muha · Diego · Oscar · Tymen · Ricardo · Mark · Jamie · Carol · Owen · Keziah",
   },
-  { t: "y un rosal deprimido" },
+  { t: "and a depressed rosebush" },
   {},
   {},
-  { h: "¡Gracias por jugar!", big: true },
+  { h: "Thanks for playing!", big: true },
 ];

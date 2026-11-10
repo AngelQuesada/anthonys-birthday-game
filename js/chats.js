@@ -1,6 +1,29 @@
 "use strict";
 // GENERADO por tools/sync-chats.js a partir de characters/*/chat.txt. No editar a mano.
 const CHATS = {
+  "Alexandra": {
+    "images": {
+      "base": "characters/Alexandra/base.png"
+    },
+    "lines": [
+      {
+        "image": "base",
+        "text": "my dearest Anthon..."
+      },
+      {
+        "image": "base",
+        "text": "I loved you from the first moment I saw you."
+      },
+      {
+        "image": "base",
+        "text": "Thank you for being my friend and for making me a better person."
+      },
+      {
+        "image": "base",
+        "text": "Happy birthday, my Astrolover!"
+      }
+    ]
+  },
   "Carol": {
     "images": {
       "base": "characters/Carol/base.png",
@@ -41,7 +64,7 @@ const CHATS = {
       },
       {
         "image": "base",
-        "text": "Feliz Cumpleaños Anthon! ❤️"
+        "text": "Happy Birthday Anthon! ❤️"
       },
       {
         "image": "happy",
@@ -101,6 +124,18 @@ const CHATS = {
       }
     ]
   },
+  "Gabi": {
+    "images": {
+      "covered": "characters/Gabi/covered.png",
+      "uncovered": "characters/Gabi/uncovered.png"
+    },
+    "lines": [
+      {
+        "image": "covered",
+        "text": "..."
+      }
+    ]
+  },
   "Jamie": {
     "images": {
       "base": "characters/Jamie/base.png",
@@ -138,6 +173,33 @@ const CHATS = {
       {
         "image": "base",
         "text": "I'm so proud of you Ant, love you lots xxxxxx"
+      }
+    ]
+  },
+  "Jessie": {
+    "images": {
+      "base": "characters/Jessie/base.png"
+    },
+    "lines": [
+      {
+        "image": "base",
+        "text": "To my left arm and right nipple, happy 30th birthday!"
+      },
+      {
+        "image": "base",
+        "text": "We won’t get away with saying we are 21 anymore!"
+      },
+      {
+        "image": "base",
+        "text": "Thank you for always being you! Our light, our laughter and our honesty…"
+      },
+      {
+        "image": "base",
+        "text": "even when we didn’t ask"
+      },
+      {
+        "image": "base",
+        "text": "Love you millions!"
       }
     ]
   },
@@ -213,7 +275,7 @@ const CHATS = {
     "lines": [
       {
         "image": "base",
-        "text": "Anthony, bitch! First of all, happy birthday, mi amor! 💋"
+        "text": "Anthony, bitch! First of all, happy birthday, my love! 💋"
       },
       {
         "image": "base",
@@ -261,7 +323,7 @@ const CHATS = {
     "lines": [
       {
         "image": "base",
-        "text": "Mi buapo!"
+        "text": "My handsome!"
       },
       {
         "image": "base",
@@ -301,6 +363,29 @@ const CHATS = {
       }
     ]
   },
+  "Radu": {
+    "images": {
+      "base": "characters/Radu/base.png"
+    },
+    "lines": [
+      {
+        "image": "base",
+        "text": "Happy birthday, Anthon!"
+      },
+      {
+        "image": "base",
+        "text": "I wish you all the best."
+      },
+      {
+        "image": "base",
+        "text": "I might lose the hat during this year’s photo shoot."
+      },
+      {
+        "image": "base",
+        "text": "😉 love you!"
+      }
+    ]
+  },
   "Ricardo": {
     "images": {
       "base": "characters/Ricardo/base.png",
@@ -312,6 +397,29 @@ const CHATS = {
       {
         "image": "base",
         "text": "fuck off"
+      }
+    ]
+  },
+  "Safa": {
+    "images": {
+      "base": "characters/Safa/base.png"
+    },
+    "lines": [
+      {
+        "image": "base",
+        "text": "Happy Birthday.."
+      },
+      {
+        "image": "base",
+        "text": "May this finally be the year of no appointments.."
+      },
+      {
+        "image": "base",
+        "text": "I hope you enjoy your 100th day off this year.."
+      },
+      {
+        "image": "base",
+        "text": "love you lots"
       }
     ]
   },

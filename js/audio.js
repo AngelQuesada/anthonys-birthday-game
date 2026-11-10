@@ -185,6 +185,59 @@ const Sfx = (() => {
     motor = { gain, oscs };
   }
 
+  // Olas en bucle (playa): ruido con dos capas, un rumor grave y la espuma aguda, cuyo volumen y brillo
+  // suben y bajan con LFOs lentos desfasados (cada ola tarda unos 8 s en llegar y retirarse).
+  // on: ¿debe sonar?; duck: bajarlas (pausa) sin cortarlas
+  let surf = null;
+  function waves(on, duck) {
+    if (!ctx) return;
+    if (!on) {
+      if (!surf || surf.fading) return;
+      surf.fading = true;
+      const s = surf;
+      s.bus.gain.setTargetAtTime(0, ctx.currentTime, 0.4);
+      s.kill = setTimeout(() => {
+        s.nodes.forEach(n => { try { n.stop(); } catch (e) { /* ya parado */ } });
+        s.bus.disconnect();
+        if (surf === s) surf = null;
+      }, 2500);
+      return;
+    }
+    if (!surf) {
+      const t = ctx.currentTime;
+      const bus = ctx.createGain();
+      bus.gain.value = 0;
+      bus.connect(master);
+      const nodes = [];
+      // [tipo de filtro, frecuencia, q, volumen base, profundidad del vaivén, periodo (Hz del LFO), fase (retardo)]
+      [['lowpass', 420, 0.6, 0.35, 0.3, 0.115, 0], ['bandpass', 1500, 0.5, 0.12, 0.11, 0.115, 1.1], ['lowpass', 300, 0.5, 0.2, 0.15, 0.07, 3]].forEach(([type, freq, q, base, depth, rate, lag]) => {
+        const src = noiseSource(ctx);
+        const f = ctx.createBiquadFilter();
+        f.type = type; f.frequency.value = freq; f.Q.value = q;
+        const g = ctx.createGain();
+        g.gain.value = base;
+        const lfo = ctx.createOscillator();
+        lfo.frequency.value = rate;
+        const d = ctx.createGain();
+        d.gain.value = depth;
+        const fd = ctx.createGain(); // el filtro también se abre con la ola
+        fd.gain.value = freq * 0.5;
+        lfo.connect(d); d.connect(g.gain);
+        lfo.connect(fd); fd.connect(f.frequency);
+        src.connect(f); f.connect(g); g.connect(bus);
+        src.start(t); lfo.start(t + lag);
+        nodes.push(src, lfo);
+      });
+      surf = { bus, nodes, fading: false, level: -1 };
+    }
+    if (surf.fading) { clearTimeout(surf.kill); surf.fading = false; surf.level = -1; }
+    const level = duck ? 0.12 : 0.5;
+    if (surf.level !== level) {
+      surf.level = level;
+      surf.bus.gain.setTargetAtTime(level, ctx.currentTime, 0.6);
+    }
+  }
+
   // ---------- música de la fase 1 (casa y patio) ----------
   // Generativa: en vez de un bucle fijo, compone sobre la marcha. Un tema de 2 compases se repite
   // transportado sobre cada acorde (así se reconoce), se contesta con frases nuevas, cambian la
@@ -440,9 +493,63 @@ const Sfx = (() => {
     return { set };
   })();
 
+  // Canción de un archivo (p. ej. media/music/song_carino.mp3) en bucle. Se llama cada frame:
+  // src: la canción que debe sonar (null = ninguna, se apaga poco a poco); duck: bajarla (pausa) sin cortarla.
+  // Mientras suena la canción, la canción va más baja y los efectos (disparos, golpes, rugidos...) más altos,
+  // para que se oigan las dos cosas.
+  const TRACK_VOL = 0.3, TRACK_DUCKED = 0.1;
+  const SFX_VOL = 0.3, SFX_VOL_WITH_TRACK = 0.55;
+  let tune = null, sfxLevel = SFX_VOL;
+  function track(src, duck) {
+    const level = src ? SFX_VOL_WITH_TRACK : SFX_VOL;
+    if (master && level !== sfxLevel) {
+      sfxLevel = level;
+      master.gain.setTargetAtTime(level, ctx.currentTime, 0.3);
+    }
+    if (tune && tune.src !== src) {
+      // otra canción o ninguna: la que suena se va apagando
+      tune.el.volume = Math.max(0, tune.el.volume - 0.02);
+      if (tune.el.volume > 0) return;
+      tune.el.pause();
+      tune = null;
+    }
+    if (!src) return;
+    if (!tune) {
+      const el = new Audio(src);
+      el.loop = true;
+      el.volume = TRACK_VOL;
+      tune = { src, el, trying: false };
+    }
+    const el = tune.el, vol = duck ? TRACK_DUCKED : TRACK_VOL;
+    el.volume += Math.sign(vol - el.volume) * Math.min(0.03, Math.abs(vol - el.volume));
+    // el navegador puede bloquearla hasta que se pulse una tecla: se reintenta hasta que suene
+    if (el.paused && !tune.trying) {
+      tune.trying = true;
+      const t = tune;
+      el.play().catch(() => {}).then(() => { t.trying = false; });
+    }
+  }
+
   return {
     unlock,
     music: music.set,
+    track,
+    waves,
+    // Terremoto: retumbo grave de `dur` segundos con golpes sueltos.
+    rumble: (dur = 2) => {
+      hiss({ type: 'lowpass', freq: 160, freqEnd: 90, q: 2, dur, vol: 0.9, attack: 0.15 });
+      hiss({ type: 'lowpass', freq: 400, freqEnd: 150, q: 1, dur: dur * 0.8, vol: 0.25, attack: 0.05 });
+      for (let t = 0; t < dur - 0.2; t += 0.18 + Math.random() * 0.2) {
+        tone({ freq: 70 + Math.random() * 30, freqEnd: 40, type: 'sine', dur: 0.25, vol: 0.5, delay: t });
+      }
+    },
+    // Foto: clic del obturador y el zumbido del flash.
+    shutter: () => {
+      hiss({ type: 'highpass', freq: 3000, dur: 0.04, vol: 0.25, attack: 0.002 });
+      tone({ freq: 1800, freqEnd: 900, dur: 0.03, vol: 0.12, type: 'square' });
+      hiss({ type: 'highpass', freq: 2500, dur: 0.05, vol: 0.18, attack: 0.002, delay: 0.09 });
+      tone({ freq: 2400, freqEnd: 5200, dur: 0.35, vol: 0.05, type: 'sine', delay: 0.12 });
+    },
     // ¡Sorpresa!: gente gritando y matasuegras.
     cheer: () => {
       hiss({ freq: 900, freqEnd: 1300, q: 0.8, dur: 1.4, vol: 0.22, attack: 0.08 });
@@ -456,6 +563,10 @@ const Sfx = (() => {
       tone({ freq: 990, dur: 0.12, vol: 0.2, delay: 0.06 });
     },
     cancel: () => tone({ freq: 520, freqEnd: 260, dur: 0.12, vol: 0.18 }),
+    // Objeto recogido: arpegio corto hacia arriba.
+    item: () => {
+      [784, 988, 1175, 1568].forEach((f, i) => tone({ freq: f, dur: i === 3 ? 0.3 : 0.09, vol: 0.16, type: 'triangle', delay: i * 0.08 }));
+    },
     pause: () => {
       tone({ freq: 523, dur: 0.07, vol: 0.16, type: 'triangle' });
       tone({ freq: 659, dur: 0.07, vol: 0.16, type: 'triangle', delay: 0.07 });
@@ -507,6 +618,38 @@ const Sfx = (() => {
       tone({ freq: 990, dur: 0.1, vol: 0.14, type: 'triangle', delay: 0.14 });
     },
     roar,
+    // el monstruo lanza una jeringuilla (silbido)
+    toss: () => {
+      hiss({ type: 'bandpass', freq: 1400, freqEnd: 600, q: 3, dur: 0.22, vol: 0.14, attack: 0.01 });
+      tone({ freq: 900, freqEnd: 500, type: 'triangle', dur: 0.12, vol: 0.06 });
+    },
+    // una jeringuilla le da al coche: cristal y chapa
+    crunch: () => {
+      hiss({ type: 'highpass', freq: 3000, dur: 0.2, vol: 0.2, attack: 0.002 });
+      tone({ freq: 260, freqEnd: 70, dur: 0.2, vol: 0.28, type: 'square' });
+      [0.03, 0.08, 0.14].forEach(d => tone({ freq: 2400 + Math.random() * 1500, dur: 0.04, vol: 0.07, type: 'triangle', delay: d }));
+    },
+    // el motor del coche se rompe y empieza a echar humo
+    fizz: () => {
+      hiss({ type: 'highpass', freq: 1800, dur: 1.2, vol: 0.12, attack: 0.05 });
+      tone({ freq: 140, freqEnd: 60, dur: 0.5, vol: 0.2, type: 'sawtooth' });
+    },
+    // la moto de Gabi llega acelerando
+    bike: () => {
+      [0, 0.35, 0.7].forEach((d, i) => tone({ freq: 90 + i * 20, freqEnd: 240 + i * 40, type: 'sawtooth', dur: 0.45, vol: 0.1, delay: d }));
+      hiss({ type: 'lowpass', freq: 500, dur: 1.2, vol: 0.08, attack: 0.1 });
+    },
+    // la moto se estrella fuera de la pantalla
+    crash: () => {
+      hiss({ type: 'lowpass', freq: 1800, freqEnd: 100, dur: 0.9, vol: 0.45, attack: 0.003 });
+      tone({ freq: 120, freqEnd: 35, dur: 0.6, vol: 0.4, type: 'sine' });
+      [0.05, 0.12, 0.22, 0.3].forEach(d => tone({ freq: 1800 + Math.random() * 1600, dur: 0.05, vol: 0.08, type: 'triangle', delay: d }));
+    },
+    // derrape sin frenos: chirrido de ruedas
+    skid: () => {
+      hiss({ type: 'bandpass', freq: 2600, freqEnd: 1900, q: 6, dur: 2, vol: 0.3, attack: 0.05 });
+      tone({ freq: 1250, freqEnd: 980, type: 'sawtooth', dur: 2, vol: 0.035 });
+    },
     boom: () => {
       hiss({ type: 'lowpass', freq: 1400, freqEnd: 120, dur: 0.45, vol: 0.3, attack: 0.005 });
       tone({ freq: 110, freqEnd: 40, dur: 0.35, vol: 0.3, type: 'sine' });

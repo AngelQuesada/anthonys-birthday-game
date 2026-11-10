@@ -91,6 +91,7 @@ const Art = (() => {
   const GROUND = {
     '.': 'grass', ',': 'grass', '=': 'path', '~': 'water', ':': 'tiles', 'o': 'deck', 'P': 'pool', 'a': 'road', '-': 'walk',
     'z': 'sand', 'Z': 'sand', 'm': 'sea', 'R': 'reef', 'k': 'stones', 'c': 'trail', 'u': 'slope',
+    'y': 'hisand', 'H': 'cliff', 'E': 'ramp',
   };
 
   // Asfalto; si debajo sigue la carretera, la línea discontinua del centro va en el borde de abajo.
@@ -105,11 +106,87 @@ const Art = (() => {
   function sandTile(g, x0, y0, r, wet = {}) {
     P(g, '#e9d49c', x0, y0, T, T);
     for (let i = 0; i < 12; i++) P(g, r() < 0.5 ? '#d8bf82' : '#f5e3b4', x0 + ((r() * T) | 0), y0 + ((r() * T) | 0));
+    sandBits(g, x0, y0, r);
     const band = '#cdb57c';
     if (wet.u) P(g, band, x0, y0, T, 4);
     if (wet.d) P(g, band, x0, y0 + T - 4, T, 4);
     if (wet.l) P(g, band, x0, y0, 4, T);
     if (wet.r) P(g, band, x0 + T - 4, y0, 4, T);
+  }
+
+  // De vez en cuando, una piedrecita para que la arena no sea toda igual.
+  function sandBits(g, x0, y0, r) {
+    const k = r(), x = x0 + 3 + ((r() * 9) | 0), y = y0 + 3 + ((r() * 9) | 0);
+    if (k < 0.12) { P(g, '#b3a07a', x, y, 2, 1); P(g, '#8f7f60', x, y + 1, 2, 1); }
+  }
+
+  // Arena de la meseta (más alta): más clara y seca. Por donde da al mar acaba en un borde
+  // de roca, y por donde da a la arena de abajo, en un filo oscuro (low: lados que caen a la playa).
+  function hiSandTile(g, x0, y0, r, sea, low) {
+    P(g, '#f3e2b4', x0, y0, T, T);
+    for (let i = 0; i < 12; i++) P(g, r() < 0.5 ? '#e4cf98' : '#fbf0cf', x0 + ((r() * T) | 0), y0 + ((r() * T) | 0));
+    sandBits(g, x0, y0, r);
+    const rim = (x, y, w, h) => { P(g, '#5b524a', x, y, w, h); };
+    if (sea.u) { rim(x0, y0, T, 3); P(g, '#8a7d6c', x0, y0 + 3, T, 1); }
+    if (sea.d) { rim(x0, y0 + T - 3, T, 3); }
+    if (sea.l) { rim(x0, y0, 3, T); P(g, '#8a7d6c', x0 + 3, y0, 1, T); }
+    if (sea.r) { rim(x0 + T - 3, y0, 3, T); P(g, '#8a7d6c', x0 + T - 4, y0, 1, T); }
+    if (low.l) { P(g, '#a8743f', x0, y0, 3, T); P(g, O, x0 + 3, y0, 1, T); P(g, '#6e4a26', x0, y0, 1, T); }
+    if (low.r) { P(g, '#a8743f', x0 + T - 3, y0, 3, T); P(g, O, x0 + T - 4, y0, 1, T); P(g, '#6e4a26', x0 + T - 1, y0, 1, T); }
+  }
+
+  // Cortado de arenisca: la pared del desnivel vista de frente, con bloques irregulares y grietas.
+  // top/bottom: si es la fila de arriba (lleva el borde de arena) o la de abajo (base en sombra);
+  // rampL/rampR: a ese lado está la rampa.
+  function cliffTile(g, x0, y0, tx, ty, top, bottom, rampL, rampR) {
+    const r = rng(hash(tx, ty) + 3);
+    const base = top ? '#d0a468' : '#bf9156', dark = top ? '#a87a44' : '#956a38', light = top ? '#e2bc82' : '#d3a86c';
+    P(g, base, x0, y0, T, T);
+    // bloques de arenisca: manchas claras con su sombra debajo
+    for (let i = 0; i < 6; i++) {
+      const bx = x0 + ((r() * 12) | 0), by = y0 + (top ? 4 : 0) + ((r() * (top ? 9 : 12)) | 0);
+      const bw = 2 + ((r() * 4) | 0);
+      P(g, light, bx, by, bw, 1);
+      P(g, dark, bx + 1, by + 1, bw, 1);
+    }
+    // grietas verticales que zigzaguean
+    for (let i = 0; i < 2; i++) {
+      let cx = x0 + 2 + ((r() * 12) | 0);
+      const cy = y0 + (top ? 4 : 0) + ((r() * 5) | 0), len = 3 + ((r() * 5) | 0);
+      for (let k = 0; k < len && cy + k < y0 + T; k++) { P(g, '#7a5530', cx, cy + k); if (r() < 0.4) cx += r() < 0.5 ? -1 : 1; }
+    }
+    if (top) {
+      // borde de arena de la meseta, algo irregular, y la línea del filo
+      P(g, '#f3e2b4', x0, y0, T, 2);
+      for (let x = 0; x < T; x++) if (r() < 0.35) P(g, '#f3e2b4', x0 + x, y0 + 2);
+      P(g, '#8a6438', x0, y0 + 3, T, 1);
+    }
+    if (bottom) { P(g, '#83603a', x0, y0 + T - 3, T, 1); P(g, '#6e4f2e', x0, y0 + T - 2, T, 2); }
+    if (rampL) P(g, '#7a5530', x0, y0, 1, T);
+    if (rampR) P(g, '#7a5530', x0 + T - 1, y0, 1, T);
+  }
+
+  // Rampa de arena que baja de la meseta a la playa: la arena pasa poco a poco del tono de arriba al de abajo,
+  // y a los lados el cortado se va estrechando hasta desaparecer (así se ve que es una pendiente).
+  // part: 0 = fila de arriba, 1 = fila de abajo (la rampa ocupa dos filas).
+  function rampTile(g, x0, y0, tx, ty, part, wallL, wallR) {
+    const r = rng(hash(tx, ty) + 11);
+    const from = [0xf3, 0xe2, 0xb4], to = [0xe9, 0xd4, 0x9c];
+    for (let y = 0; y < T; y++) {
+      const k = (part * T + y) / (2 * T);
+      const c = from.map((v, i) => Math.round(v + (to[i] - v) * k));
+      P(g, `rgb(${c[0]},${c[1]},${c[2]})`, x0, y0 + y, T, 1);
+    }
+    for (let i = 0; i < 8; i++) P(g, r() < 0.5 ? '#dcc58e' : '#f7ead0', x0 + ((r() * T) | 0), y0 + ((r() * T) | 0));
+    // arena escurrida por la pendiente: ondas suaves y algo de sombra en mitad de la bajada
+    for (let i = 0; i < 2; i++) P(g, 'rgba(160,120,60,0.2)', x0 + ((r() * 6) | 0), y0 + 4 + i * 6 + ((r() * 2) | 0), 7 + ((r() * 4) | 0), 1);
+    // paredes laterales del cortado, cada vez más estrechas hacia abajo
+    for (let y = 0; y < T; y++) {
+      const wdt = Math.round(7 * (1 - (part * T + y) / (2 * T)));
+      if (wdt <= 0) continue;
+      if (wallL) { P(g, '#c79a5f', x0, y0 + y, wdt, 1); P(g, '#7a5530', x0 + wdt, y0 + y, 1, 1); }
+      if (wallR) { P(g, '#c79a5f', x0 + T - wdt, y0 + y, wdt, 1); P(g, '#7a5530', x0 + T - wdt - 1, y0 + y, 1, 1); }
+    }
   }
 
   // Mar abierto: olas que se mueven con el fotograma y espuma que rompe en la orilla (los lados sin mar).
@@ -130,17 +207,32 @@ const Art = (() => {
     if (!nb.r) { foam(x0 + T - 4, y0, 4, T); for (let i = 0; i < T; i++) if (dots(i + 3)) P(g, '#eefaff', x0 + T - 4 - (frame === 1 ? 1 : 0), y0 + i); }
   }
 
-  // Roca volcánica negra de la costa; donde toca el mar salpica espuma.
+  // Zona de piedras de la costa: arena con muchas piedras sueltas y redondeadas de varios tamaños.
+  // Donde toca el mar la arena está mojada y rompe algo de espuma.
   function reefTile(g, x0, y0, tx, ty, sea, frame) {
     const r = rng(hash(tx, ty));
-    P(g, '#3a3634', x0, y0, T, T);
-    for (let i = 0; i < 4; i++) {
-      const bx = x0 + ((r() * 12) | 0), by = y0 + ((r() * 12) | 0), bw = 3 + ((r() * 4) | 0), bh = 2 + ((r() * 3) | 0);
-      P(g, '#24201f', bx, by + bh, bw, 1);
-      P(g, '#575150', bx, by, bw, bh);
-      P(g, '#6e6764', bx, by, bw - 1, 1);
-    }
-    for (let i = 0; i < 5; i++) P(g, '#1c1918', x0 + ((r() * T) | 0), y0 + ((r() * T) | 0));
+    P(g, '#dcc48e', x0, y0, T, T);
+    for (let i = 0; i < 10; i++) P(g, r() < 0.5 ? '#c9b07a' : '#e8d4a4', x0 + ((r() * T) | 0), y0 + ((r() * T) | 0));
+    const wet = '#bba26c';
+    if (sea.u) P(g, wet, x0, y0, T, 3);
+    if (sea.d) P(g, wet, x0, y0 + T - 3, T, 3);
+    if (sea.l) P(g, wet, x0, y0, 3, T);
+    if (sea.r) P(g, wet, x0 + T - 3, y0, 3, T);
+    const STONES = [['#6f6a66', '#8c8782', '#4a4542'], ['#5a5552', '#77716c', '#3a3634'], ['#857d72', '#a39b8f', '#5e574f'], ['#4d4a48', '#6a6663', '#2e2b2a']];
+    const stone = (sx, sy, sw, sh) => {
+      const [col, light, dark] = STONES[(r() * STONES.length) | 0];
+      P(g, 'rgba(90,70,40,0.35)', sx + 1, sy + sh, sw - 1, 1);     // sombra en la arena
+      P(g, O, sx + 1, sy - 1, sw - 2, 1); P(g, O, sx + 1, sy + sh, sw - 2, 1);
+      P(g, O, sx - 1 + 1, sy, 1, sh); P(g, O, sx + sw - 1, sy, 1, sh);
+      P(g, col, sx + 1, sy, sw - 2, sh);
+      P(g, light, sx + 1, sy, Math.max(1, sw - 3), 1);
+      P(g, dark, sx + 1, sy + sh - 1, sw - 2, 1);
+    };
+    // unas grandes y bastantes pequeñas, dejando ver la arena entre ellas
+    const big = 1 + ((r() * 2) | 0);
+    for (let i = 0; i < big; i++) stone(x0 + ((r() * 9) | 0), y0 + 1 + ((r() * 9) | 0), 6 + ((r() * 3) | 0), 4 + ((r() * 2) | 0));
+    for (let i = 0; i < 4; i++) stone(x0 + ((r() * 12) | 0), y0 + 1 + ((r() * 12) | 0), 3 + ((r() * 2) | 0), 2 + ((r() * 2) | 0));
+    for (let i = 0; i < 5; i++) P(g, r() < 0.5 ? '#5a5552' : '#8c8782', x0 + ((r() * T) | 0), y0 + ((r() * T) | 0));
     const spray = i => (i * 3 + frame * 5 + tx + ty) % 7 < 2;
     for (let i = 0; i < T; i++) {
       if (sea.u && spray(i)) P(g, '#eefaff', x0 + i, y0);
@@ -325,12 +417,17 @@ const Art = (() => {
   function ground(tiles, frame, flats = [], base = 'grass') {
     const h = tiles.length, w = tiles[0].length;
     const { c, g } = mk(w * T, h * T);
-    const groundOf = ch => GROUND[ch] || base;
-    const typeAt = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? null : groundOf(tiles[y][x]));
+    const grassy = ch => ch === '.' || ch === ',';
+    const types = tiles.map((row, y) => [...row].map((ch, x) => {
+      if (GROUND[ch]) return GROUND[ch];
+      if ((ch === 'Y' || ch === 'b' || ch === 'T') && [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dy]) => grassy((tiles[y + dy] || '')[x + dx]))) return 'grass';
+      return base;
+    }));
+    const typeAt = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? null : types[y][x]);
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const ch = tiles[y][x];
-        const type = groundOf(ch);
+        const type = types[y][x];
         const same = (dx, dy) => { const t = typeAt(x + dx, y + dy); return t === null || t === type; };
         const nb = {
           u: same(0, -1), d: same(0, 1), l: same(-1, 0), r: same(1, 0),
@@ -348,7 +445,21 @@ const Art = (() => {
           const sea = { u: typeAt(x, y - 1) === 'sea', d: typeAt(x, y + 1) === 'sea', l: typeAt(x - 1, y) === 'sea', r: typeAt(x + 1, y) === 'sea' };
           if (type === 'sand') sandTile(g, x * T, y * T, r, sea);
           else reefTile(g, x * T, y * T, x, y, sea, frame);
+          if (type === 'sand') {
+            const high = t => t === 'hisand' || t === 'cliff';
+            if (high(typeAt(x, y - 1))) P(g, 'rgba(90,60,20,0.22)', x * T, y * T, T, 3);
+            if (high(typeAt(x + 1, y))) P(g, 'rgba(90,60,20,0.22)', x * T + T - 4, y * T, 4, T);
+            if (high(typeAt(x - 1, y))) P(g, 'rgba(90,60,20,0.22)', x * T, y * T, 4, T);
+          }
         }
+        else if (type === 'hisand') {
+          const isSea = t => t === 'sea' || t === 'reef';
+          const sea = { u: isSea(typeAt(x, y - 1)), d: isSea(typeAt(x, y + 1)), l: isSea(typeAt(x - 1, y)), r: isSea(typeAt(x + 1, y)) };
+          const low = { l: typeAt(x - 1, y) === 'sand', r: typeAt(x + 1, y) === 'sand' };
+          hiSandTile(g, x * T, y * T, r, sea, low);
+        }
+        else if (type === 'cliff') cliffTile(g, x * T, y * T, x, y, typeAt(x, y - 1) !== 'cliff', typeAt(x, y + 1) !== 'cliff', typeAt(x - 1, y) === 'ramp', typeAt(x + 1, y) === 'ramp');
+        else if (type === 'ramp') rampTile(g, x * T, y * T, x, y, typeAt(x, y - 1) === 'ramp' ? 1 : 0, typeAt(x - 1, y) === 'cliff', typeAt(x + 1, y) === 'cliff');
         else if (type === 'sea') seaTile(g, x * T, y * T, x, y, nb, frame);
         else if (type === 'stones') stonesTile(g, x * T, y * T, x, y);
         else if (type === 'trail') trailTile(g, x * T, y * T, r, nb);
@@ -577,7 +688,8 @@ const Art = (() => {
   // azotea con pérgola de madera oscura, viga marrón entre plantas y escalera exterior de barro cocido.
   function makeMedHouse(hs) {
     const floors = hs.floors || 2;
-    const W = hs.w * T, H = hs.h * T + 8;
+    const back = hs.face === 'up'; // la puerta está detrás, en el lado de arriba
+    const W = hs.w * T, H = hs.h * T + (back ? 0 : 8);
     const { c, g } = mk(W, H);
     const white = '#f8f6f1', whiteD = '#e6e1d6', whiteDD = '#cfc8ba', wood = '#5a3a28', woodD = '#3a2418';
     const ground = 32, upper = floors === 2 ? 24 : 0, roof = H - ground - upper;
@@ -661,8 +773,18 @@ const Art = (() => {
     // ventana de la planta baja
     win(dx + dw + 7, yGround + 13, 12, 10);
     // door: false → sin puerta delantera (se entra por otro sitio, p. ej. un anexo con `style: 'annex'`)
-    if (hs.door === false) {
+    if (hs.door === false || back) {
       P(g, whiteDD, 1, H - 3, W - 2, 2);
+      if (back) {
+        // puerta trasera vista desde arriba: tejadillo de madera sobre el hueco y escalón de barro
+        const bx = doorCol * T + 1;
+        P(g, O, bx - 1, 0, 16, 9);
+        P(g, '#6b4423', bx, 0, 14, 4);
+        P(g, '#c96f4a', bx, 4, 14, 1);
+        P(g, wood, bx, 5, 14, 3);
+        for (let x = bx + 1; x < bx + 14; x += 3) P(g, woodD, x, 5, 1, 3);
+        P(g, '#ffe7a0', bx + 13, 1, 1, 2);
+      }
       return c;
     }
     // puerta de madera oscura con el escalón
@@ -1622,6 +1744,28 @@ const Art = (() => {
     return c;
   }
 
+  // Cámara de fotos sobre un trípode bajo, puesta en el suelo (escena de la foto de grupo).
+  function makeTripodCamera() {
+    const { c, g } = mk(T, 24);
+    ell(g, C.shadow, 8, 22.5, 6, 1.5);
+    // patas
+    for (let i = 0; i < 9; i++) {
+      P(g, '#3a3a44', 7 - Math.round(i * 0.55), 13 + i);
+      P(g, '#3a3a44', 8 + Math.round(i * 0.55), 13 + i);
+    }
+    P(g, '#2a2a30', 7, 12, 2, 9);
+    // cuerpo de la cámara y objetivo (mirando hacia arriba, al grupo)
+    orect(g, '#2a2a30', 2, 5, 12, 8);
+    P(g, '#4a4a55', 3, 6, 10, 1);
+    oell(g, '#5a5a66', 8, 9, 3, 3, '#18181c');
+    ell(g, '#6fa8dc', 8, 9, 1.5, 1.5);
+    P(g, '#d8e8f8', 7, 8);
+    orect(g, '#2a2a30', 3, 3, 4, 3);
+    P(g, '#f2f2f2', 10, 6, 2, 1);
+    P(g, '#e04a5a', 12, 11);
+    return c;
+  }
+
   // Tumbona vista desde arriba (respaldo arriba).
   function makeLounger() {
     const { c, g } = mk(T, 32);
@@ -1697,11 +1841,11 @@ const Art = (() => {
     return c;
   }
 
-  // El descapotable rojo de la batalla, visto de lado, empotrado de morro (a la derecha) contra algo:
+  // El descapotable beige de la batalla, visto de lado, empotrado de morro (a la derecha) contra algo:
   // capó arrugado, faro roto, parabrisas rajado, puerta abierta y el arma del lateral doblada.
   function makeCarCrash() {
     const { c, g } = mk(32, 24);
-    const red = '#d8342c', redD = '#9e1f1c', redL = '#f06a4e';
+    const red = '#d6c29a', redD = '#a48f68', redL = '#efe2c4'; // beige
     ell(g, C.shadow, 16, 22, 15, 2);
     // carrocería, más baja por delante donde se ha hundido el capó
     orect(g, red, 1, 11, 24, 8);
@@ -1710,8 +1854,8 @@ const Art = (() => {
     [[25, 13], [27, 14], [29, 13], [26, 16], [28, 17]].forEach(([x, y]) => P(g, redD, x, y, 1, 2)); // chapa arrugada
     P(g, redL, 1, 11, 24, 1);
     P(g, redD, 1, 17, 30, 2);
-    // asientos del descapotable y parabrisas rajado, inclinado hacia atrás
-    P(g, '#3a2a20', 6, 8, 12, 3);
+    // asientos del descapotable (habitáculo negro) y parabrisas rajado, inclinado hacia atrás
+    P(g, '#141418', 6, 8, 12, 3);
     P(g, O, 18, 4, 2, 7);
     P(g, '#bfe4f4', 19, 4, 1, 6);
     P(g, '#ffffff', 19, 5, 1, 1);
@@ -1733,6 +1877,39 @@ const Art = (() => {
     oell(g, '#2a2a30', 25, 19, 2.5, 3); P(g, '#a4aab1', 25, 18, 1, 2);
     // cristales por el suelo
     [[3, 22], [14, 23], [28, 22], [30, 21]].forEach(([x, y]) => P(g, '#d9f3ff', x, y));
+    return c;
+  }
+
+  // Roca enorme en mitad del mar (4x4 casillas): un solo peñasco gris oscuro, con espuma en la base.
+  function makeBigRock() {
+    const { c, g } = mk(64, 72);
+    const lumps = [[32, 50, 29, 17], [20, 36, 16, 18], [43, 32, 18, 20], [31, 20, 13, 12]];
+    ell(g, "#5fc8d8", 32, 64, 32, 8);
+    ell(g, "rgba(238,250,255,0.85)", 32, 64, 30, 6);
+    lumps.forEach(([x, y, rx, ry]) => ell(g, O, x, y, rx + 1, ry + 1));
+    lumps.forEach(([x, y, rx, ry]) => ell(g, "#5d5853", x, y, rx, ry));
+    // caras iluminadas arriba a la izquierda y en sombra abajo a la derecha
+    ell(g, "#77716b", 20, 32, 11, 12);
+    ell(g, "#77716b", 30, 18, 9, 7);
+    ell(g, "#8f8982", 17, 27, 5, 6);
+    ell(g, "#8f8982", 28, 14, 4, 3);
+    ell(g, "#4a4542", 46, 44, 13, 12);
+    ell(g, "#3a3634", 40, 58, 18, 6);
+    // grietas
+    [[24, 40, 30, 52], [38, 22, 35, 34], [48, 30, 52, 40], [14, 46, 20, 56]].forEach(([x0, y0, x1, y1]) => {
+      const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+      for (let i = 0; i <= n; i++) P(g, "#2e2b2a", Math.round(x0 + ((x1 - x0) * i) / n), Math.round(y0 + ((y1 - y0) * i) / n));
+    });
+    // agua que moja la base
+    ell(g, "rgba(47,134,201,0.45)", 32, 66, 28, 4);
+    [[6, 63], [12, 66], [50, 66], [57, 63], [30, 68]].forEach(([x, y]) => P(g, "#eefaff", x, y, 3, 1));
+    return c;
+  }
+
+  // Felpudo de exterior (plano).
+  function makeDoormatOut() {
+    const { c, g } = mk(T, T);
+    doormat(g, 0, 0);
     return c;
   }
 
@@ -1774,6 +1951,21 @@ const Art = (() => {
     return c;
   }
 
+  // Cartera marrón de piel tirada en el suelo, con una tarjeta asomando por arriba.
+  function makeWallet() {
+    const { c, g } = mk(T, T);
+    ell(g, C.shadow, 8, 13, 6, 1.5);
+    orect(g, '#e8e2d0', 5, 4, 5, 3);
+    P(g, '#4f9fe0', 6, 4, 3, 1);
+    orect(g, '#8a5a32', 3, 6, 10, 6);
+    P(g, '#a8743f', 4, 6, 8, 1);
+    P(g, '#6e4524', 3, 10, 10, 1);
+    for (let x = 4; x < 12; x += 2) P(g, '#c08a52', x, 7);
+    orect(g, '#6e4524', 10, 8, 3, 2);
+    P(g, '#d9b25a', 11, 8);
+    return c;
+  }
+
   // Muebles: tamaño en casillas. Los planos no bloquean el paso y se pintan en el suelo.
   // Los `stretch` no tienen tamaño fijo: se les da `w` y `h` en el mapa (por defecto 1).
   const FURNITURE = {
@@ -1812,6 +2004,7 @@ const Art = (() => {
     pole: { w: 1, h: 1, make: makePole },
     partytable: { w: 3, h: 1, make: makePartyTable },
     speaker: { w: 1, h: 1, make: makeSpeaker },
+    phototripod: { w: 1, h: 1, make: makeTripodCamera },
     lounger: { w: 1, h: 2, make: makeLounger },
     float: { w: 1, h: 1, flat: true, make: makeFloat },
     gift: { w: 1, h: 1, make: makeGift },
@@ -1820,10 +2013,13 @@ const Art = (() => {
     carwhite: { w: 2, h: 1, make: () => makeCar('#ecebe6') },
     carcrash: { w: 2, h: 1, make: makeCarCrash },
     cone: { w: 1, h: 1, make: makeCone },
+    doormat: { w: 1, h: 1, flat: true, make: makeDoormatOut },
+    bigrock: { w: 4, h: 4, make: makeBigRock },
     swing: { w: 3, h: 1, make: makeSwing },
     bench: { w: 2, h: 1, make: makeBench },
     bollard: { w: 1, h: 1, make: makeBollard },
     slide: { w: 2, h: 1, make: makeSlide },
+    wallet: { w: 1, h: 1, flat: true, make: makeWallet },
   };
   const furnitureImgs = {};
 
@@ -2104,6 +2300,9 @@ const Art = (() => {
 
     ell(g, 'rgba(0,0,0,0.25)', 8, 22, 5, 1.6);
 
+    // estampado de la ropa (d.print): hojitas de dos píxeles en diagonal sobre el cuerpo y las piernas
+    const print = pts => { if (d.print) pts.forEach(([x, y]) => P(g, d.print, x, y)); };
+
     const spikes = () => {
       [4, 7, 10].forEach(sx => {
         P(g, O, sx, 0, 2, 1);
@@ -2122,6 +2321,7 @@ const Art = (() => {
       orect(g, shirt, 12, 13 - la, 2, 4); P(g, skin, 12, 16 - la, 2, 1);
       orect(g, shirt, 4, 12, 8, 6);
       P(g, shirtD, 4, 16, 8, 1);
+      print([[5, 13], [6, 14], [9, 13], [10, 14], [7, 15], [8, 16], [5, 17], [10, 18], [2, 14], [13, 14]]);
       if (dir === 'down') P(g, skin, 7, 12, 2, 1);
       bald ? baldHead(g, skin) : orect(g, skin, 3, 3, 10, 9);
 
@@ -2145,6 +2345,7 @@ const Art = (() => {
           P(g, hair, 4, 6, 2, 1); P(g, hair, 7, 6, 1, 1); P(g, hair, 9, 6, 3, 1);
           P(g, hairL, 5, 3, 3, 1);
           if (style === 'long') { orect(g, hair, 2, 5, 2, 9); orect(g, hair, 12, 5, 2, 9); P(g, hairD, 2, 12, 2, 1); P(g, hairD, 12, 12, 2, 1); }
+          if (style === 'bob') { orect(g, hair, 2, 4, 2, 7); orect(g, hair, 12, 4, 2, 7); P(g, hairD, 2, 10, 2, 1); P(g, hairD, 12, 10, 2, 1); }
           if (style === 'spiky') spikes();
           P(g, O, 5, 8, 1, 2); P(g, O, 10, 8, 1, 2);
           P(g, blush, 4, 10); P(g, blush, 11, 10);
@@ -2164,9 +2365,10 @@ const Art = (() => {
           P(g, hair, 3, 7, 10, 3);
           P(g, shade(hair, -0.15), 3, 9, 10, 1);
         } else {
-          orect(g, hair, 3, 2, 10, style === 'long' ? 12 : 9);
+          const hl = style === 'long' ? 12 : style === 'bob' ? 10 : 9;
+          orect(g, hair, style === 'bob' ? 2 : 3, 2, style === 'bob' ? 12 : 10, hl);
           P(g, hairL, 5, 3, 4, 1);
-          P(g, hairD, 4, style === 'long' ? 12 : 9, 8, 1);
+          P(g, hairD, 4, hl, 8, 1);
           if (style === 'spiky') spikes();
         }
         if (d.hat) {
@@ -2174,6 +2376,7 @@ const Art = (() => {
           P(g, shade(d.hat, -0.3), 4, 5, 8, 1);
         }
       }
+      if (d.hood) drawHood(g, d, dir);
       return;
     }
 
@@ -2189,9 +2392,11 @@ const Art = (() => {
     }
     orect(g, shirt, 5, 12, 6, 6);
     P(g, shirtD, 5, 16, 6, 1);
+    print([[5, 13], [6, 14], [9, 13], [10, 14], [6, 16], [7, 17]]);
     const ax = f === 1 ? 5 : f === 2 ? 9 : 7;
     orect(g, shade(shirt, -0.12), ax, 13, 2, 4);
     P(g, skin, ax, 16, 2, 1);
+    print([[ax, 14]]);
     bald ? baldHead(g, skin) : orect(g, skin, 3, 3, 10, 9);
     if (bald) {
       drawBald(g, d, 'left');
@@ -2211,6 +2416,7 @@ const Art = (() => {
       P(g, hair, 3, 6, 2, 1);
       P(g, hairL, 6, 3, 3, 1);
       if (style === 'long') { orect(g, hair, 8, 5, 5, 9); P(g, hairD, 8, 12, 5, 1); }
+      if (style === 'bob') { orect(g, hair, 8, 5, 5, 6); P(g, hairD, 8, 10, 5, 1); }
       if (style === 'spiky') { spikes(); P(g, O, 13, 4, 1, 2); P(g, hair, 13, 5); }
       P(g, skin, 8, 7, 2, 2); P(g, skinD, 9, 8);
       P(g, O, 4, 8, 1, 2);
@@ -2221,6 +2427,30 @@ const Art = (() => {
       P(g, shade(d.hat, 0.3), 5, 1, 3, 1);
       P(g, shade(d.hat, -0.3), 1, 5, 6, 1);
       P(g, O, 0, 5); P(g, O, 1, 6, 6, 1);
+    }
+    if (d.hood) drawHood(g, d, dir);
+  }
+
+  // Capucha que tapa toda la cabeza: de frente solo se ve la barbilla.
+  function drawHood(g, d, dir) {
+    const hood = d.hood, hoodD = shade(hood, -0.35), hoodL = shade(hood, 0.2);
+    if (dir === 'up') {
+      orect(g, hood, 2, 1, 12, 11);
+      P(g, hoodL, 5, 3, 4, 1);
+      P(g, hoodD, 7, 4, 1, 7);
+    } else if (dir === 'down') {
+      orect(g, hood, 2, 1, 12, 11);
+      P(g, hoodL, 5, 2, 4, 1);
+      P(g, hoodD, 4, 4, 8, 7);
+      P(g, O, 5, 5, 6, 5);
+      P(g, d.skin, 6, 10, 4, 1);
+      P(g, shade(d.skin, -0.2), 7, 11, 2, 1);
+    } else {
+      orect(g, hood, 3, 1, 11, 11);
+      P(g, hoodL, 6, 2, 4, 1);
+      P(g, hoodD, 3, 4, 5, 7);
+      P(g, O, 3, 5, 3, 5);
+      P(g, d.skin, 4, 10, 3, 1);
     }
   }
 
